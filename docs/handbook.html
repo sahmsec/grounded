@@ -1,0 +1,586 @@
+<title>grounded — operator handbook</title>
+<style>
+  :root {
+    --bg:#FFFFFF; --sunk:#F4F6FA; --raised:#FAFBFD;
+    --ink:#1A1B20; --ink-2:#565A64; --ink-3:#878C96;
+    --line:#E5E7EE; --line-2:#D3D7E1;
+    --accent:#2B62D9; --accent-soft:#EDF2FD;
+    --ok:#0F7A55; --ok-soft:#E5F4EC;
+    --warn:#96600A; --warn-soft:#FBF1DE;
+    --bad:#B3261E; --bad-soft:#FBE8E7;
+    --sans:"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
+    --mono:ui-monospace,"Cascadia Mono","SF Mono",Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:#0E0E10; --sunk:#17181C; --raised:#141519;
+      --ink:#E6E7EB; --ink-2:#A3A8B2; --ink-3:#767B85;
+      --line:#25262C; --line-2:#33353D;
+      --accent:#8CA6F8; --accent-soft:#171C2E;
+      --ok:#45C795; --ok-soft:#0F2B21;
+      --warn:#DDA54A; --warn-soft:#2B2211;
+      --bad:#EC6A70; --bad-soft:#2E1618;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg:#0E0E10; --sunk:#17181C; --raised:#141519;
+    --ink:#E6E7EB; --ink-2:#A3A8B2; --ink-3:#767B85;
+    --line:#25262C; --line-2:#33353D;
+    --accent:#8CA6F8; --accent-soft:#171C2E;
+    --ok:#45C795; --ok-soft:#0F2B21;
+    --warn:#DDA54A; --warn-soft:#2B2211;
+    --bad:#EC6A70; --bad-soft:#2E1618;
+  }
+
+  * { box-sizing:border-box; }
+  body {
+    background:var(--bg); color:var(--ink); font-family:var(--sans);
+    font-size:15.5px; line-height:1.68; -webkit-font-smoothing:antialiased;
+  }
+
+  .shell { max-width:1120px; margin:0 auto; padding:0 28px 100px; display:grid; gap:0 52px; }
+  @media (min-width:1000px) { .shell { grid-template-columns:196px minmax(0,1fr); } }
+
+  /* ── nav ── */
+  nav { display:none; }
+  @media (min-width:1000px) {
+    nav {
+      display:block; position:sticky; top:0; align-self:start;
+      padding:44px 0 40px; max-height:100vh; overflow-y:auto;
+    }
+    nav a {
+      display:block; padding:5px 0; font-size:13.5px; color:var(--ink-3);
+      text-decoration:none; border-left:2px solid transparent; padding-left:12px;
+      margin-left:-14px;
+    }
+    nav a:hover { color:var(--ink); border-left-color:var(--line-2); }
+    nav .navhead {
+      font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+      color:var(--ink-3); padding-left:12px; margin:22px 0 6px;
+    }
+    nav .navhead:first-child { margin-top:0; }
+  }
+
+  main { padding:44px 0 0; min-width:0; }
+
+  header.title { border-bottom:1px solid var(--line); padding-bottom:26px; margin-bottom:38px; }
+  header.title h1 { margin:0 0 10px; font-size:31px; font-weight:640; letter-spacing:-.026em; }
+  header.title p { margin:0; color:var(--ink-2); max-width:62ch; font-size:16.5px; }
+
+  section { margin-bottom:52px; scroll-margin-top:20px; }
+  h2 {
+    margin:0 0 14px; font-size:20px; font-weight:640; letter-spacing:-.018em;
+    padding-bottom:9px; border-bottom:1px solid var(--line);
+  }
+  h3 { margin:28px 0 8px; font-size:15.5px; font-weight:640; }
+  p { margin:0 0 13px; max-width:74ch; }
+  ul, ol { margin:0 0 14px; padding-left:22px; max-width:74ch; }
+  li { margin-bottom:5px; }
+  strong { font-weight:640; }
+  a { color:var(--accent); }
+
+  code {
+    font-family:var(--mono); font-size:.87em; background:var(--sunk);
+    padding:1.5px 5px; border-radius:4px; white-space:nowrap;
+  }
+  pre {
+    background:var(--sunk); border:1px solid var(--line); border-radius:9px;
+    padding:14px 16px; overflow-x:auto; margin:0 0 16px; line-height:1.6;
+  }
+  pre code { background:none; padding:0; font-size:13px; white-space:pre; }
+  pre .c { color:var(--ink-3); }
+
+  .callout {
+    border:1px solid var(--line-2); border-radius:9px; padding:14px 17px;
+    margin:0 0 18px; background:var(--raised); max-width:74ch;
+  }
+  .callout.warn { border-color:var(--warn); background:var(--warn-soft); }
+  .callout.bad { border-color:var(--bad); background:var(--bad-soft); }
+  .callout .lbl {
+    display:block; font-size:11px; font-weight:700; letter-spacing:.09em;
+    text-transform:uppercase; margin-bottom:6px; color:var(--ink-3);
+  }
+  .callout.warn .lbl { color:var(--warn); }
+  .callout.bad .lbl { color:var(--bad); }
+  .callout p:last-child { margin-bottom:0; }
+
+  .scroll { overflow-x:auto; margin:0 0 18px; }
+  table { border-collapse:collapse; width:100%; font-size:14px; }
+  th {
+    text-align:left; font-size:11px; letter-spacing:.09em; text-transform:uppercase;
+    color:var(--ink-3); font-weight:650; padding:0 14px 9px 0; white-space:nowrap;
+    border-bottom:1px solid var(--line-2);
+  }
+  td { padding:11px 14px 11px 0; border-bottom:1px solid var(--line); vertical-align:top; }
+  td:last-child, th:last-child { padding-right:0; }
+  tbody tr:last-child td { border-bottom:none; }
+  td code { white-space:normal; }
+
+  .sym { font-weight:600; }
+  .pill {
+    display:inline-block; font-size:11px; font-weight:650; letter-spacing:.04em;
+    padding:2px 8px; border-radius:999px; background:var(--sunk); color:var(--ink-2);
+  }
+  .pill.ok { background:var(--ok-soft); color:var(--ok); }
+  .pill.warn { background:var(--warn-soft); color:var(--warn); }
+  .pill.bad { background:var(--bad-soft); color:var(--bad); }
+
+  .cadence { display:grid; gap:12px; margin-bottom:18px; }
+  .cadence div {
+    display:grid; grid-template-columns:104px minmax(0,1fr); gap:14px;
+    padding:12px 0; border-top:1px solid var(--line);
+  }
+  .cadence div:first-child { border-top:none; padding-top:0; }
+  .cadence dt {
+    font-family:var(--mono); font-size:12px; color:var(--accent); font-weight:600;
+    text-transform:uppercase; letter-spacing:.05em; padding-top:2px;
+  }
+  .cadence dd { margin:0; color:var(--ink-2); }
+  .cadence dd b { color:var(--ink); font-weight:620; }
+
+  @media (max-width:640px) {
+    .shell { padding:0 18px 70px; }
+    header.title h1 { font-size:25px; }
+  }
+</style>
+
+<div class="shell">
+
+<nav>
+  <div class="navhead">Start</div>
+  <a href="#what">What it is</a>
+  <a href="#run">Running it</a>
+  <div class="navhead">Operating</div>
+  <a href="#content">Adding material</a>
+  <a href="#admin">Admin panel</a>
+  <a href="#quota">Quotas &amp; cost</a>
+  <a href="#tuning">Tuning the gate</a>
+  <div class="navhead">When it breaks</div>
+  <a href="#symptoms">Symptom index</a>
+  <a href="#traps">Known traps</a>
+  <div class="navhead">Reference</div>
+  <a href="#rhythm">Maintenance</a>
+  <a href="#commands">Commands</a>
+  <a href="#layout">Where things live</a>
+</nav>
+
+<main>
+
+<header class="title">
+  <h1>Operator handbook</h1>
+  <p>Everything needed to run, feed and repair the course assistant — written for whoever is
+     on the other end of "it stopped working", including you in three months.</p>
+</header>
+
+<!-- ─────────────── WHAT IT IS ─────────────── -->
+<section id="what">
+  <h2>What it is, in one rule</h2>
+  <p>
+    The assistant answers <strong>only</strong> from the course material you give it, shows the passage each
+    answer came from, and refuses when the material does not cover the question.
+  </p>
+  <p>
+    That refusal is decided in code, before any model is contacted — a similarity score below the gate ends
+    the request. It is not an instruction in a prompt that the model might ignore. Every change you make
+    should preserve that property; it is the whole reason to run this instead of a general chatbot.
+  </p>
+  <p>Three things happen for a typical question:</p>
+  <ol>
+    <li>The question is turned into a vector and matched against stored passages.</li>
+    <li>The best score is compared with the gate. Below it, the fixed refusal is returned and no model runs.</li>
+    <li>Above it, the surviving passages and the question go to the model, which must cite what it used.</li>
+  </ol>
+  <p>
+    Greetings, thanks and questions about the assistant itself are answered in code without any model call.
+    Follow-ups like "explain more" are rewritten into standalone questions first, because "more" means
+    nothing to a search index on its own.
+  </p>
+</section>
+
+<!-- ─────────────── RUNNING ─────────────── -->
+<section id="run">
+  <h2>Running it</h2>
+  <pre><code><span class="c"># first time only</span>
+npm install
+npm run db:up          <span class="c"># Postgres + pgvector in Docker, port 5433</span>
+npm run migrate
+npm run seed
+
+<span class="c"># every day</span>
+npm run db:up          <span class="c"># if Docker was restarted</span>
+npm start              <span class="c"># http://localhost:3000</span></code></pre>
+
+  <p>Two pages: the chat at <code>/</code> and the admin panel at <code>/admin</code>.</p>
+
+  <div class="callout warn">
+    <span class="lbl">Before anyone else can reach it</span>
+    <p>
+      The admin panel is protected by a single shared token, not user accounts. It reads and writes API
+      keys, so <strong>do not expose port 3000 beyond your own machine</strong> until it has real
+      authentication. On a shared network, anyone who finds it can take your keys.
+    </p>
+  </div>
+</section>
+
+<!-- ─────────────── CONTENT ─────────────── -->
+<section id="content">
+  <h2>Adding course material</h2>
+  <p>
+    One markdown file per topic in <code>seed/</code>. The frontmatter block is required — <code>source</code>
+    is what students see as the citation, so write it as a reference they would recognise.
+  </p>
+
+  <pre><code>---
+slug: sql-injection
+title: SQL Injection
+source: Course Notes, Week 4
+category: application-security
+---
+
+Body text…</code></pre>
+
+  <pre><code>npm run seed           <span class="c"># adds new and changed files, skips the rest</span>
+npm run seed -- --force <span class="c"># wipes and rebuilds everything</span></code></pre>
+
+  <p>
+    Unchanged files are skipped by checksum, so re-running is cheap. Use <code>--force</code> only when the
+    embedding model changed — that is the one case where the files look identical but every stored vector
+    is stale.
+  </p>
+
+  <h3>Writing material that actually gets found</h3>
+  <p>
+    This is the highest-leverage thing you will do, and it is not obvious. Retrieval matches meaning, but it
+    can only match what is written down.
+  </p>
+  <ul>
+    <li><strong>Add an FAQ section to every topic</strong> — the real questions students ask, with answers.
+        Student phrasing matches student phrasing, so these retrieve far better than prose.</li>
+    <li><strong>Use the words students use.</strong> They say "hacking into a database", not "SQL injection".
+        If a topic never contains their vocabulary, their question will not find it.</li>
+    <li><strong>Use headings and short sections.</strong> Text is split at paragraph boundaries; structured
+        documents split cleanly, walls of text do not.</li>
+    <li><strong>Say things explicitly.</strong> A passage that depends on the paragraph before it arrives at
+        the model alone, without that context.</li>
+    <li><strong>Depth beats breadth.</strong> A topic of three bullet points becomes one weak passage and
+        retrieves badly. A few hundred words is where this starts working.</li>
+  </ul>
+
+  <div class="callout">
+    <span class="lbl">Coverage sets the boundary</span>
+    <p>
+      Anything not in <code>seed/</code> is refused. That is the point — but it means an examinable topic
+      missing from the folder is a topic the assistant will deny knowing.
+    </p>
+  </div>
+</section>
+
+<!-- ─────────────── ADMIN ─────────────── -->
+<section id="admin">
+  <h2>The admin panel</h2>
+  <p>
+    At <code>/admin</code>, signed in with <code>ADMIN_TOKEN</code> from <code>.env</code>. From there you can
+    add and pause API keys, choose the provider and model from a list fetched live from your key, and watch
+    quota consumption per key.
+  </p>
+  <p>Changes apply immediately — no restart.</p>
+
+  <div class="callout warn">
+    <span class="lbl">The gotcha that will cost you an hour</span>
+    <p>
+      <strong>Once a model is chosen in the panel, it overrides <code>.env</code>.</strong> Editing
+      <code>GEMINI_LLM_MODEL</code> and restarting will appear to do nothing at all. Change it in the panel,
+      or clear the row from the <code>app_settings</code> table.
+    </p>
+  </div>
+
+  <h3>Where keys live</h3>
+  <p>
+    Keys are stored in the database encrypted with <code>ADMIN_MASTER_KEY</code>, and only the last four
+    characters are ever shown again. The master key stays in <code>.env</code> and cannot move into the
+    database — storing it beside the ciphertext would make the encryption decorative.
+  </p>
+  <p>
+    Keys already in <code>.env</code> were imported automatically the first time the panel started. Losing
+    <code>ADMIN_MASTER_KEY</code> makes every stored key unreadable; you would re-enter them, not recover them.
+  </p>
+</section>
+
+<!-- ─────────────── QUOTA ─────────────── -->
+<section id="quota">
+  <h2>Quotas, rotation and cost</h2>
+
+  <h3>What a question costs</h3>
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Turn</th><th>Embedding calls</th><th>Model calls</th></tr></thead>
+      <tbody>
+        <tr><td>Greeting, thanks, "what can you do"</td><td>0</td><td>0</td></tr>
+        <tr><td>Question that gets refused</td><td>1</td><td>0</td></tr>
+        <tr><td>Question that gets answered</td><td>1</td><td>1</td></tr>
+        <tr><td>Follow-up ("explain more")</td><td>1</td><td>2 <span class="pill">one is a small model</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout bad">
+    <span class="lbl">The limit that will actually bite you</span>
+    <p>
+      <strong>Free-tier quota is counted per model, per day — and it is small.</strong> Google's flagship
+      flash model allows around twenty requests a day. Not per key: per <em>model</em>. Lite models are far
+      more generous, which is why answering runs on one and follow-up rewriting runs on another.
+    </p>
+    <p>
+      Our per-provider limits in <code>.env</code> are therefore an approximation. When something says
+      "exhausted", check the model before blaming the key.
+    </p>
+  </div>
+
+  <h3>Rotation</h3>
+  <p>
+    Add keys in the panel, or comma-separate them in <code>.env</code>. Each becomes an independent slot with
+    its own counters. When one is rate-limited the next serves the request and the user notices nothing.
+  </p>
+  <pre><code>GEMINI_API_KEYS=key1,key2,key3</code></pre>
+  <p>
+    A credential that returns <code>429</code> cools until its window reopens, then returns automatically.
+    One that returns <code>401</code> or <code>403</code> is marked dead permanently, because a wrong key will
+    not fix itself and retrying it forever hides the one failure that needs a human.
+  </p>
+  <p>
+    Two rules the pool enforces: ingestion waits out a rate limit rather than leaving a half-built index,
+    while a live question fails fast — nobody should sit through a cooldown. And an embedding pool may rotate
+    across <em>keys</em> but never across <em>models</em>, which is rejected at startup.
+  </p>
+
+  <h3>Stretching a free tier honestly</h3>
+  <ul>
+    <li><strong>Caching will save more than extra keys.</strong> A course bot gets the same ten questions from
+        two hundred students. Not built yet; the single best cost decision available.</li>
+    <li><strong>Small models for simple work.</strong> Already done for rewriting.</li>
+    <li><strong>Rate-limit per student</strong> so one person cannot drain the pool.</li>
+  </ul>
+  <p>
+    Creating many accounts to multiply a free tier generally breaches provider terms, and the practical
+    result is banned keys rather than a philosophical debate. Multiple keys across projects you legitimately
+    own are fine.
+  </p>
+</section>
+
+<!-- ─────────────── TUNING ─────────────── -->
+<section id="tuning">
+  <h2>Tuning the gate</h2>
+  <p>
+    The gate is one number: the similarity a question must reach before it is answered.
+    <strong>It is a property of the embedding model and the corpus, not a universal constant.</strong>
+    A value that is right today is meaningless after you change either.
+  </p>
+  <pre><code>npm run calibrate</code></pre>
+  <p>
+    It scores every acceptance question, groups them by whether they should be answered or refused, and
+    reports where the two groups separate. Put the gate in that gap.
+  </p>
+
+  <div class="callout warn">
+    <span class="lbl">Watch the margin, not just the number</span>
+    <p>
+      The gap is currently about <strong>0.06</strong> — the closest must-refuse question scores 0.66, the
+      weakest must-answer one scores 0.73, and the gate sits at 0.70. That works, but it is narrow. As you add
+      topics, adjacent subjects will crowd it.
+    </p>
+    <p>
+      <strong>Re-run calibration whenever the corpus changes meaningfully.</strong> If the gap ever closes,
+      that is your signal to add reranking — and not before.
+    </p>
+  </div>
+</section>
+
+<!-- ─────────────── SYMPTOMS ─────────────── -->
+<section id="symptoms">
+  <h2>Symptom index</h2>
+  <p>Start here when something is wrong. Symptoms are what you see; causes are rarely what you would guess.</p>
+
+  <div class="scroll">
+    <table>
+      <thead><tr><th>What you see</th><th>What it means</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="sym">Everything refused, scores around 0.05</td>
+          <td>The corpus was indexed with a different embedding model than the one now running. Vectors are not comparable.</td>
+          <td><code>npm run seed -- --force</code>. Startup now blocks on this rather than failing quietly.</td>
+        </tr>
+        <tr>
+          <td class="sym"><code>all_providers_exhausted</code></td>
+          <td>Every key is cooling, dead, or over its daily budget — usually the per-model daily cap.</td>
+          <td>Switch model in the panel, add a key, or wait for the window. Check <code>/admin</code> for which.</td>
+        </tr>
+        <tr>
+          <td class="sym">404, "no longer available to new users"</td>
+          <td>The model was retired for new accounts. It still appears in listings.</td>
+          <td><code>npm run models -- --probe</code>, then pick one that responds.</td>
+        </tr>
+        <tr>
+          <td class="sym">"Gemini returned an empty completion"</td>
+          <td>Thinking tokens are charged against <code>MAX_OUTPUT_TOKENS</code>, so a small cap leaves nothing for the reply.</td>
+          <td>Raise <code>MAX_OUTPUT_TOKENS</code>. Below roughly 500 this is likely.</td>
+        </tr>
+        <tr>
+          <td class="sym">Changed <code>.env</code>, nothing happened</td>
+          <td>A model selected in the admin panel overrides the file.</td>
+          <td>Change it in <code>/admin</code> instead.</td>
+        </tr>
+        <tr>
+          <td class="sym">Refuses something that IS in the material</td>
+          <td>Almost always phrasing: the passage does not use the words the student used.</td>
+          <td>Check the score in the reply. Add an FAQ entry using their wording, re-seed, re-calibrate.</td>
+        </tr>
+        <tr>
+          <td class="sym">Answers are confident but wrong</td>
+          <td>Retrieval found the wrong passage, or two topics overlap near the gate.</td>
+          <td>Check which source was cited. If retrieval was right, it is a prompt problem; if wrong, a content problem.</td>
+        </tr>
+        <tr>
+          <td class="sym">Development data vanished after tests</td>
+          <td>Fixed. Tests now use a separate <code>grounded_test</code> database.</td>
+          <td>If it recurs, check <code>TEST_DATABASE_URL</code> is not pointing at the main database.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>How to triage in the right order</h3>
+  <p>
+    When an answer is wrong, resist rewriting the prompt. Ask first: <strong>did retrieval find the right
+    passage?</strong> The score and the cited source are shown with every reply.
+  </p>
+  <ul>
+    <li><strong>Wrong passage, or nothing found</strong> — a content or retrieval problem. Prompts cannot fix it.</li>
+    <li><strong>Right passage, poor answer</strong> — now it is a prompt or model problem.</li>
+  </ul>
+  <p>Most time is lost by skipping that check.</p>
+</section>
+
+<!-- ─────────────── TRAPS ─────────────── -->
+<section id="traps">
+  <h2>Known traps</h2>
+  <p>Each of these cost real time. They are all silent — nothing crashes, nothing appears in the logs.</p>
+
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Trap</th><th>Why it is dangerous</th><th>Guard</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Mixing embedding models in one index</td>
+          <td>Two models can both output 768 numbers that are entirely incomparable. Scores collapse; no error appears.</td>
+          <td><span class="pill ok">Blocked at startup</span></td>
+        </tr>
+        <tr>
+          <td>Rotating an embedding pool across providers</td>
+          <td>Same failure, arrived at through configuration rather than deployment.</td>
+          <td><span class="pill ok">Rejected in config</span></td>
+        </tr>
+        <tr>
+          <td>Tests sharing the development database</td>
+          <td>The suite truncates and re-seeds. Passing tests, destroyed data.</td>
+          <td><span class="pill ok">Separate database</span></td>
+        </tr>
+        <tr>
+          <td>Changing the model without re-calibrating</td>
+          <td>Thresholds do not transfer. The gate becomes arbitrary.</td>
+          <td><span class="pill warn">Manual — run calibrate</span></td>
+        </tr>
+        <tr>
+          <td>Assuming a listed model works</td>
+          <td>Retired models stay in listings and reject new accounts at request time.</td>
+          <td><span class="pill warn">Manual — probe first</span></td>
+        </tr>
+        <tr>
+          <td>Per-provider quota limits</td>
+          <td>Real limits are per model. Counters are approximate and can under-predict exhaustion.</td>
+          <td><span class="pill bad">Known gap</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ─────────────── RHYTHM ─────────────── -->
+<section id="rhythm">
+  <h2>Maintenance rhythm</h2>
+  <dl class="cadence">
+    <div>
+      <dt>Weekly</dt>
+      <dd>Read the refusals in the logs. <b>Each one is either a content gap or a phrasing miss</b> — that
+          list is your content backlog, written by your actual students.</dd>
+    </div>
+    <div>
+      <dt>Content change</dt>
+      <dd>Re-seed, then <b>re-run calibration</b> and the acceptance suite.</dd>
+    </div>
+    <div>
+      <dt>Model change</dt>
+      <dd>Probe that it works, re-calibrate the gate, re-run the suite. If the embedding model changed,
+          <b>re-index everything</b>.</dd>
+    </div>
+    <div>
+      <dt>Each term</dt>
+      <dd>Check the corpus still matches the syllabus. Rotate API keys. Run everything.</dd>
+    </div>
+  </dl>
+</section>
+
+<!-- ─────────────── COMMANDS ─────────────── -->
+<section id="commands">
+  <h2>Command reference</h2>
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td><code>npm start</code></td><td>Runs the chat and admin server</td></tr>
+        <tr><td><code>npm run db:up</code> / <code>db:down</code></td><td>Starts or stops Postgres</td></tr>
+        <tr><td><code>npm run migrate</code></td><td>Applies schema changes; safe to re-run</td></tr>
+        <tr><td><code>npm run seed</code></td><td>Indexes new and changed material</td></tr>
+        <tr><td><code>npm run seed -- --force</code></td><td>Wipes and rebuilds the index</td></tr>
+        <tr><td><code>npm run verify</code></td><td>Runs the acceptance questions and reports pass or fail</td></tr>
+        <tr><td><code>npm run calibrate</code></td><td>Measures scores and suggests a gate value</td></tr>
+        <tr><td><code>npm run models</code></td><td>Lists what your key is offered</td></tr>
+        <tr><td><code>npm run models -- --probe</code></td><td>Tests each with a real call</td></tr>
+        <tr><td><code>npm run smoke</code></td><td>Checks every credential works</td></tr>
+        <tr><td><code>npm run ask "…"</code></td><td>Asks one question from the terminal</td></tr>
+        <tr><td><code>npm test</code></td><td>Full suite; uses its own database</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ─────────────── LAYOUT ─────────────── -->
+<section id="layout">
+  <h2>Where things live</h2>
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Path</th><th>Contents</th></tr></thead>
+      <tbody>
+        <tr><td><code>seed/</code></td><td>Course material. One markdown file per topic.</td></tr>
+        <tr><td><code>src/retrieval/gate.ts</code></td><td>The refusal decision. Pure function, no I/O.</td></tr>
+        <tr><td><code>src/rag/</code></td><td>Prompting, small talk, follow-up rewriting, answering.</td></tr>
+        <tr><td><code>src/providers/pool/</code></td><td>Key rotation, quota counting, health.</td></tr>
+        <tr><td><code>src/admin/</code></td><td>Encrypted key storage, live model switching.</td></tr>
+        <tr><td><code>src/verification/scenarios.ts</code></td><td>The acceptance questions. Add real student ones here.</td></tr>
+        <tr><td><code>public/</code></td><td>Chat page and admin page.</td></tr>
+        <tr><td><code>.env</code></td><td>Secrets. Never committed.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout">
+    <span class="lbl">If you change one thing carefully, make it this</span>
+    <p>
+      <code>src/retrieval/gate.ts</code> is the whole refusal guarantee. It takes candidates and thresholds and
+      returns a decision, with no database, model or clock involved — which is why it can be tested exhaustively.
+      Keep it that way.
+    </p>
+  </div>
+</section>
+
+</main>
+</div>
