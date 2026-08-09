@@ -7,36 +7,38 @@
 <style>
   :root {
     --bg:#FFFFFF;
-    --surface:#F0F4F9;
-    --surface-2:#E9EEF6;
+    --glow: 120, 152, 255;      /* radial wash behind the centred composer */
+    --glow-strength: .20;
+    --field:#F0F4F9;
+    --field-hover:#E9EEF6;
+    --raised:#F4F6FA;
     --ink:#1F1F22;
-    --ink-2:#5B5F66;
-    --ink-3:#8E9299;
-    --hairline:#E3E6EB;
+    --ink-2:#5C606A;
+    --ink-3:#8C919B;
     --accent:#2B62D9;
-    --accent-2:#6B4FD8;
     --accent-ink:#FFFFFF;
     --flag:#8A5A05;
-    --flag-bg:#FDF3E2;
+    --flag-bg:#FBF1DF;
     --error:#B3261E;
-    --sans: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", sans-serif;
+    --sans: "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", sans-serif;
     --mono: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg:#131316;
-      --surface:#1E1F24;
-      --surface-2:#282A30;
-      --ink:#E8E8EC;
-      --ink-2:#A8ACB4;
-      --ink-3:#787D85;
-      --hairline:#2A2C32;
-      --accent:#8AA6F5;
-      --accent-2:#B49CF7;
-      --accent-ink:#101014;
+      --bg:#0E0E10;
+      --glow: 46, 84, 196;
+      --glow-strength: .38;
+      --field:#1D1E21;
+      --field-hover:#25262A;
+      --raised:#191A1D;
+      --ink:#E5E6E9;
+      --ink-2:#A6AAB2;
+      --ink-3:#787D86;
+      --accent:#8CA6F8;
+      --accent-ink:#0E0E10;
       --flag:#DFAC53;
       --flag-bg:#2A2110;
-      --error:#F2A0A0;
+      --error:#F09A9A;
     }
   }
 
@@ -46,31 +48,53 @@
     background: var(--bg); color: var(--ink);
     font-family: var(--sans); font-size: 16px; line-height: 1.72;
     -webkit-font-smoothing: antialiased;
-    display: flex; flex-direction: column;
+    display: flex; flex-direction: column; overflow: hidden;
   }
   button { font: inherit; }
 
-  /* ─────────── top bar ─────────── */
-  .bar { flex: none; height: 62px; display: flex; align-items: center; padding: 0 22px; gap: 12px; }
-  .brand { display: flex; align-items: center; gap: 9px; margin-right: auto; }
-  .brand svg { display: block; color: var(--accent); }
-  .brand b { font-size: 17px; font-weight: 600; letter-spacing: -.012em; color: var(--ink-2); }
-
-  .topics-btn {
-    border: 0; background: var(--surface); color: var(--ink-2); cursor: pointer;
-    border-radius: 999px; padding: 7px 15px; font-size: 13.5px;
-    display: flex; align-items: center; gap: 8px; transition: background .14s;
+  /* The one decorative element: a wide, soft wash centred behind the composer.
+     It fades away once a conversation starts so the text has a plain ground. */
+  .wash {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background: radial-gradient(
+      ellipse 62vw 46vh at 50% 48%,
+      rgba(var(--glow), var(--glow-strength)) 0%,
+      rgba(var(--glow), calc(var(--glow-strength) * .45)) 34%,
+      transparent 72%);
+    transition: opacity .7s ease;
   }
-  .topics-btn:hover { background: var(--surface-2); }
-  .topics-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .topics-btn svg { transition: transform .18s; }
-  .topics-btn[aria-expanded="true"] svg { transform: rotate(180deg); }
+  body.chatting .wash { opacity: 0; }
+  @media (prefers-reduced-motion: reduce) { .wash { transition: none; } }
 
-  .topics { flex: none; padding: 0 22px 6px; }
+  /* ─────────── top bar ─────────── */
+  .bar {
+    position: relative; z-index: 2; flex: none; height: 58px;
+    display: flex; align-items: center; gap: 8px; padding: 0 18px;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 8px; margin-right: auto;
+    color: var(--ink-2); font-size: 15px; font-weight: 500; letter-spacing: -.01em;
+  }
+  .brand svg { display: block; opacity: .75; }
+
+  .chip {
+    border: 0; background: transparent; color: var(--ink-2); cursor: pointer;
+    border-radius: 999px; padding: 7px 14px; font-size: 13.5px;
+    display: flex; align-items: center; gap: 7px; transition: background .15s, color .15s;
+  }
+  .chip:hover { background: var(--raised); color: var(--ink); }
+  .chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .chip svg { display: block; transition: transform .2s; }
+  .chip[aria-expanded="true"] .caret { transform: rotate(180deg); }
+  .chip.icon-only { padding: 8px; }
+
+  .topics {
+    position: relative; z-index: 2; flex: none; padding: 0 18px 4px;
+  }
   .topics[hidden] { display: none; }
   .topics-inner {
-    max-width: 780px; margin: 0 auto; background: var(--surface);
-    border-radius: 18px; padding: 18px 22px;
+    max-width: 820px; margin: 0 auto; background: var(--raised);
+    border-radius: 20px; padding: 17px 20px;
     display: flex; flex-wrap: wrap; gap: 8px;
   }
   .topics-inner p { width: 100%; margin: 0 0 6px; font-size: 13px; color: var(--ink-3); }
@@ -79,43 +103,43 @@
     border-radius: 999px; padding: 4px 13px;
   }
 
-  /* ─────────── thread ─────────── */
-  main { flex: 1; overflow-y: auto; }
-  .thread { max-width: 780px; margin: 0 auto; padding: 20px 22px 8px; }
-
-  .greeting { padding: 12vh 0 0; }
-  .greeting h1 {
-    margin: 0 0 6px; font-size: clamp(32px, 6vw, 46px); font-weight: 600;
-    letter-spacing: -.032em; line-height: 1.1;
-    background: linear-gradient(96deg, var(--accent) 8%, var(--accent-2) 78%);
-    -webkit-background-clip: text; background-clip: text; color: transparent;
-    width: fit-content;
-  }
-  .greeting p {
-    margin: 0; font-size: clamp(21px, 3.6vw, 29px); font-weight: 500;
-    letter-spacing: -.022em; color: var(--ink-3); line-height: 1.25;
+  /* ─────────── stage / thread ─────────── */
+  main {
+    position: relative; z-index: 1; flex: 1; min-height: 0;
+    display: flex; flex-direction: column; overflow-y: auto;
   }
 
-  .turn { margin-bottom: 42px; }
+  /* Empty state: greeting and composer sit together, vertically centred. */
+  .stage {
+    margin: auto; width: 100%; max-width: 820px; padding: 0 22px 6vh;
+    display: flex; flex-direction: column; align-items: center;
+  }
+  .greeting {
+    margin: 0 0 30px; text-align: center;
+    font-size: clamp(28px, 5.2vw, 45px); font-weight: 400;
+    letter-spacing: -.022em; line-height: 1.16; color: var(--ink);
+  }
 
-  .asked { display: flex; justify-content: flex-end; margin-bottom: 30px; }
+  .thread { max-width: 820px; width: 100%; margin: 0 auto; padding: 6px 22px 12px; }
+  .thread:empty { display: none; }
+
+  .turn { margin-bottom: 40px; }
+
+  .asked { display: flex; justify-content: flex-end; margin-bottom: 28px; }
   .asked span {
-    background: var(--surface); border-radius: 22px; padding: 12px 19px;
+    background: var(--field); border-radius: 22px; padding: 12px 20px;
     max-width: 84%; white-space: pre-wrap; overflow-wrap: anywhere;
   }
 
   .reply { display: flex; gap: 16px; align-items: flex-start; }
-  .glyph {
-    flex: none; width: 26px; height: 26px; margin-top: 4px;
-    display: grid; place-items: center; color: var(--accent);
-  }
+  .glyph { flex: none; width: 24px; margin-top: 6px; color: var(--accent); opacity: .85; }
   .glyph svg { display: block; }
   .body { flex: 1; min-width: 0; }
 
   .answer { white-space: pre-wrap; overflow-wrap: anywhere; }
   .refused .answer { color: var(--ink-2); }
 
-  /* Only the exception is marked; a normal answer wears no decoration. */
+  /* Only the exception is marked; an ordinary answer wears no decoration. */
   .flag {
     display: inline-block; font-size: 12.5px; font-weight: 600; color: var(--flag);
     background: var(--flag-bg); border-radius: 999px; padding: 3px 12px; margin-bottom: 12px;
@@ -124,12 +148,12 @@
 
   .sources { margin-top: 22px; }
   .sources-head {
-    font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+    font-size: 11.5px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase;
     color: var(--ink-3); margin-bottom: 9px;
   }
   .source {
     display: flex; gap: 11px; align-items: baseline; font-size: 14px; color: var(--ink-2);
-    background: var(--surface); border-radius: 12px; padding: 9px 14px; margin-bottom: 6px;
+    background: var(--raised); border-radius: 13px; padding: 9px 15px; margin-bottom: 6px;
   }
   .source:last-child { margin-bottom: 0; }
   .source .n { font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); flex: none; }
@@ -139,43 +163,51 @@
   .meta { margin-top: 14px; font-size: 12.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 
   .waiting { color: var(--ink-3); }
-  .waiting::after {
-    content: "▍"; margin-left: 2px; animation: blink 1.05s steps(2, start) infinite;
-  }
+  .waiting::after { content: "▍"; margin-left: 2px; animation: blink 1.05s steps(2,start) infinite; }
   @keyframes blink { to { visibility: hidden } }
   @media (prefers-reduced-motion: reduce) { .waiting::after { animation: none } }
 
   /* ─────────── composer ─────────── */
-  .dock { flex: none; padding: 10px 22px 18px; background: var(--bg); }
-  .dock-inner { max-width: 780px; margin: 0 auto; }
+  /* Lives inside .stage while empty, then moves into .dock on first send. */
+  .composer { width: 100%; max-width: 820px; }
 
   .field {
     display: flex; align-items: flex-end; gap: 10px;
-    background: var(--surface); border-radius: 28px; padding: 8px 8px 8px 22px;
-    transition: background .14s, box-shadow .14s;
+    background: var(--field); border-radius: 30px; padding: 9px 9px 9px 24px;
+    transition: background .15s;
   }
-  .field:focus-within { background: var(--surface-2); box-shadow: 0 1px 10px rgba(0,0,0,.06); }
+  .field:focus-within { background: var(--field-hover); }
   textarea {
     flex: 1; border: 0; background: none; resize: none; font: inherit; color: var(--ink);
-    padding: 12px 0; line-height: 1.5; min-height: 26px; max-height: 190px;
+    padding: 14px 0; line-height: 1.5; min-height: 28px; max-height: 200px;
   }
   textarea:focus { outline: none; }
   textarea::placeholder { color: var(--ink-3); }
 
   .send {
-    flex: none; width: 40px; height: 40px; border: 0; border-radius: 50%; cursor: pointer;
+    flex: none; width: 42px; height: 42px; border: 0; border-radius: 50%; cursor: pointer;
     background: var(--accent); color: var(--accent-ink);
-    display: grid; place-items: center; transition: opacity .14s;
+    display: grid; place-items: center; transition: opacity .15s, transform .1s;
   }
-  .send:disabled { opacity: .3; cursor: default; }
+  .send:disabled { opacity: .28; cursor: default; }
+  .send:not(:disabled):active { transform: scale(.93); }
   .send:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
   .send svg { display: block; }
 
-  .disclaimer { margin-top: 11px; text-align: center; font-size: 12px; color: var(--ink-3); }
+  .disclaimer {
+    margin: 11px 0 0; text-align: center; font-size: 12px; color: var(--ink-3);
+  }
+
+  .dock {
+    position: relative; z-index: 2; flex: none; padding: 4px 22px 16px;
+    display: flex; flex-direction: column; align-items: center;
+  }
+  .dock:empty { display: none; }
 
   @media (max-width: 620px) {
-    .thread, .dock, .bar, .topics { padding-left: 15px; padding-right: 15px; }
-    .greeting { padding-top: 8vh; }
+    .bar { padding: 0 12px; }
+    .stage, .thread, .dock, .topics { padding-left: 15px; padding-right: 15px; }
+    .field { padding-left: 18px; }
     .source { flex-wrap: wrap; }
     .source .cite { margin-left: 0; }
   }
@@ -183,19 +215,29 @@
 </head>
 <body>
 
+<div class="wash" aria-hidden="true"></div>
+
 <div class="bar">
   <span class="brand">
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
       <path d="M10 2 3.2 5v4.8c0 4.3 2.9 8.3 6.8 9.4 3.9-1.1 6.8-5.1 6.8-9.4V5L10 2Z"
             stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
     </svg>
-    <b>grounded</b>
+    grounded
   </span>
-  <button class="topics-btn" id="topics-btn" aria-expanded="false" aria-controls="topics" hidden>
+
+  <button class="chip" id="topics-btn" aria-expanded="false" aria-controls="topics" hidden>
     <span id="topics-count">Topics</span>
-    <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
+    <svg class="caret" width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
       <path d="m2.4 4.1 3.1 3.1 3.1-3.1" stroke="currentColor" stroke-width="1.5"
             stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+
+  <button class="chip icon-only" id="reset" aria-label="Start a new conversation" hidden>
+    <svg width="17" height="17" viewBox="0 0 17 17" fill="none" aria-hidden="true">
+      <path d="M11.6 2.6a1.4 1.4 0 0 1 2 2L6.2 12l-2.7.7.7-2.7 7.4-7.4Z"
+            stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
     </svg>
   </button>
 </div>
@@ -207,34 +249,42 @@
 </div>
 
 <main>
-  <div class="thread" id="thread">
-    <div class="greeting" id="greeting">
-      <h1>Hello</h1>
-      <p>What would you like to know?</p>
+  <div class="stage" id="stage">
+    <h1 class="greeting" id="greeting">What would you like to know?</h1>
+
+    <div class="composer" id="composer">
+      <div class="field">
+        <textarea id="input" rows="1" aria-label="Your question"
+                  placeholder="Ask about the course material"></textarea>
+        <button class="send" id="send" aria-label="Send" disabled>
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+            <path d="M9 14.6V4M4.2 8.8 9 4l4.8 4.8" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+      <p class="disclaimer">Answers come only from the course material, with sources shown.</p>
     </div>
   </div>
+
+  <div class="thread" id="thread"></div>
 </main>
 
-<div class="dock">
-  <div class="dock-inner">
-    <div class="field">
-      <textarea id="input" rows="1" aria-label="Your question" placeholder="Ask about the course material"></textarea>
-      <button class="send" id="send" aria-label="Send">
-        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-          <path d="M9 14.5V4M4.2 8.8 9 4l4.8 4.8" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </button>
-    </div>
-    <div class="disclaimer">Answers come only from the course material, with sources shown.</div>
-  </div>
-</div>
+<div class="dock" id="dock"></div>
 
 <script>
 (() => {
   const thread = document.getElementById('thread');
+  const dock = document.getElementById('dock');
+  const main = document.querySelector('main');
+  // Reassigned on reset, so this cannot be a const bound to the first node.
+  let stage = document.getElementById('stage');
+  const composer = document.getElementById('composer');
   const input = document.getElementById('input');
   const send = document.getElementById('send');
+  const reset = document.getElementById('reset');
+
+  let chatting = false;
 
   function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -248,7 +298,7 @@
   function shield() {
     const ns = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS(ns, 'svg');
-    svg.setAttribute('width', '19'); svg.setAttribute('height', '19');
+    svg.setAttribute('width', '18'); svg.setAttribute('height', '18');
     svg.setAttribute('viewBox', '0 0 20 20'); svg.setAttribute('fill', 'none');
     const path = document.createElementNS(ns, 'path');
     path.setAttribute('d', 'M10 2 3.2 5v4.8c0 4.3 2.9 8.3 6.8 9.4 3.9-1.1 6.8-5.1 6.8-9.4V5L10 2Z');
@@ -257,6 +307,17 @@
     path.setAttribute('stroke-linejoin', 'round');
     svg.append(path);
     return svg;
+  }
+
+  /** Empty state centres the composer; the first question docks it. */
+  function startChatting() {
+    if (chatting) return;
+    chatting = true;
+    document.body.classList.add('chatting');
+    dock.append(composer);
+    stage?.remove();
+    stage = null;
+    reset.hidden = false;
   }
 
   function renderReply(result) {
@@ -306,7 +367,7 @@
     const question = input.value.trim();
     if (!question) return;
 
-    document.getElementById('greeting')?.remove();
+    startChatting();
     input.value = '';
     resize();
     send.disabled = true;
@@ -339,7 +400,9 @@
     } catch {
       waiting.replaceWith(renderFailure('Could not reach the server. Check that it is still running.'));
     } finally {
-      send.disabled = false;
+      // resize() rather than a bare enable: the button's state depends on
+      // whether anything was typed while the reply was in flight.
+      resize();
       input.focus();
       turn.scrollIntoView({ block: 'end', behavior: 'smooth' });
     }
@@ -347,7 +410,8 @@
 
   function resize() {
     input.style.height = 'auto';
-    input.style.height = Math.min(input.scrollHeight, 190) + 'px';
+    input.style.height = Math.min(input.scrollHeight, 200) + 'px';
+    send.disabled = input.value.trim().length === 0;
   }
 
   input.addEventListener('input', resize);
@@ -355,6 +419,18 @@
     if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); ask(); }
   });
   send.addEventListener('click', ask);
+
+  reset.addEventListener('click', () => {
+    thread.replaceChildren();
+    chatting = false;
+    document.body.classList.remove('chatting');
+    reset.hidden = true;
+
+    stage = el('div', 'stage');
+    stage.append(el('h1', 'greeting', 'What would you like to know?'), composer);
+    main.prepend(stage);
+    input.focus();
+  });
 
   const toggle = document.getElementById('topics-btn');
   const panel = document.getElementById('topics');
