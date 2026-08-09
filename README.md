@@ -50,12 +50,25 @@ npm run migrate && npm run seed && npm run verify
 Switching embedding models changes the vector space, so the corpus must be re-seeded. Drop the volume with
 `npm run db:down && docker volume rm chatbot_grounded-pgdata` before re-seeding with a different model.
 
+## The chat interface
+
+`npm start`, then open <http://localhost:3000>.
+
+One static page, no framework and no build step. Every reply shows the similarity score retrieval produced,
+plotted against the live gate, so you can see *why* it answered or held back — and which chunks it was
+grounded in. Five probe buttons load one question from each test category; a refusal on the last three is the
+system working, not failing.
+
+Refusals are coloured amber rather than red. A refusal is correct behaviour; red is reserved for genuine
+failures such as an exhausted credential pool.
+
 ## Endpoints
 
 | Route | Purpose |
 |---|---|
+| `GET /` | Chat interface |
 | `POST /ask` | `{"question": "..."}` → answer with citations, or the canonical refusal |
-| `GET /health` | Database reachability and pool state |
+| `GET /health` | Database reachability, pool state, live gate thresholds |
 | `GET /admin/providers` | Per-credential quota, health, cooldowns, and recent events |
 
 ```bash

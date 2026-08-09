@@ -7,6 +7,7 @@
 
 import http from 'node:http';
 import path from 'node:path';
+import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import { createApp, type App } from '../app.ts';
@@ -14,6 +15,7 @@ import { toAppError } from '../errors/index.ts';
 import type { Logger } from '../logging/logger.ts';
 
 const MAX_BODY_BYTES = 64 * 1024;
+const PUBLIC_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'public');
 
 function send(response: http.ServerResponse, status: number, payload: unknown): void {
   const body = JSON.stringify(payload, null, 2);
@@ -54,6 +56,16 @@ export function createServer(app: App): http.Server {
       const route = `${request.method} ${url.pathname}`;
 
       try {
+        if (route === 'GET /' || route === 'GET /index.html') {
+          const html = await readFile(path.join(PUBLIC_DIR, 'index.html'));
+          response.writeHead(200, {
+            'content-type': 'text/html; charset=utf-8',
+            'content-length': html.byteLength,
+          });
+          response.end(html);
+          return;
+        }
+
         if (route === 'GET /health') {
           const healthy = await app.healthy();
           const pools = app.poolStatus();
@@ -63,6 +75,10 @@ export function createServer(app: App): http.Server {
             status: ready ? 'ok' : 'degraded',
             database: healthy ? 'up' : 'down',
             pools: { llm: pools.llm.state, embedding: pools.embedding.state },
+            // The UI draws its score scale against the live gate rather than a
+            // hardcoded copy, so the two can never drift apart.
+            gate: app.config.gate,
+            embeddingModel: app.config.embedding.model,
           });
           return;
         }
