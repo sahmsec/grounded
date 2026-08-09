@@ -66,6 +66,17 @@ export interface PoolCallOutcome<T> {
 
 export type PoolCall<T> = (credential: CredentialConfig) => Promise<PoolCallOutcome<T>>;
 
+export interface ExecuteOptions {
+  /**
+   * Wait for a cooling credential to recover rather than failing immediately.
+   *
+   * Interactive requests should fail fast — a user will not sit through a
+   * rate-limit window. Batch work like ingestion should wait, because the job
+   * is not finished and restarting it costs more than the delay.
+   */
+  maxWaitMs?: number;
+}
+
 export interface PoolResult<T> {
   value: T;
   credentialId: string;
@@ -197,7 +208,47 @@ export class CredentialPool {
     });
   }
 
-  async execute<T>(call: PoolCall<T>): Promise<PoolResult<T>> {
+  async execute<T>(call: PoolCall<T>, options: ExecuteOptions = {}): Promise<PoolResult<T>> {
+    const deadline = options.maxWaitMs ? this.now() + options.maxWaitMs : 0;
+
+    for (;;) {
+      const outcome = await this.sweep(call);
+      if (outcome.ok) return outcome.result;
+
+      // Everything is unavailable. Wait only if a credential is merely cooling
+      // and its window reopens before the caller's deadline.
+      const soonest = this.soonestRecovery();
+      if (!deadline || soonest === null || soonest > deadline) {
+        this.emit({
+          type: 'pool.exhausted',
+          level: 'error',
+          pool: this.name,
+          detail: `No usable credential among ${this.runtimes.length}`,
+        });
+        throw new AllProvidersExhaustedError(this.name, outcome.skipped);
+      }
+
+      const pause = Math.max(0, soonest - this.now()) + 250;
+      this.logger.info('pool.waiting', { forMs: pause, until: new Date(soonest).toISOString() });
+      await this.sleep(pause);
+    }
+  }
+
+  /** Earliest moment any cooling credential returns, or null if none will. */
+  private soonestRecovery(): number | null {
+    const times = this.runtimes
+      .filter((runtime) => runtime.state === 'cooling' && runtime.cooldownUntil !== null)
+      .map((runtime) => runtime.cooldownUntil as number);
+    return times.length > 0 ? Math.min(...times) : null;
+  }
+
+  /** One pass over every credential in priority order. */
+  private async sweep<T>(
+    call: PoolCall<T>,
+  ): Promise<
+    | { ok: true; result: PoolResult<T> }
+    | { ok: false; skipped: Array<{ credentialId: string; reason: string }> }
+  > {
     const skipped: Array<{ credentialId: string; reason: string }> = [];
     let attempts = 0;
 
@@ -231,10 +282,13 @@ export class CredentialPool {
 
       if (outcome.ok) {
         return {
-          value: outcome.value,
-          credentialId: runtime.config.id,
-          provider: runtime.config.provider,
-          attempts,
+          ok: true,
+          result: {
+            value: outcome.value,
+            credentialId: runtime.config.id,
+            provider: runtime.config.provider,
+            attempts,
+          },
         };
       }
 
@@ -242,14 +296,7 @@ export class CredentialPool {
       if (outcome.fatal) throw outcome.error;
     }
 
-    this.emit({
-      type: 'pool.exhausted',
-      level: 'error',
-      pool: this.name,
-      detail: `No usable credential among ${this.runtimes.length}`,
-    });
-
-    throw new AllProvidersExhaustedError(this.name, skipped);
+    return { ok: false, skipped };
   }
 
   /**

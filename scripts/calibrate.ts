@@ -25,7 +25,8 @@ try {
   }> = [];
 
   for (const scenario of SCENARIOS) {
-    const embedding = await app.embeddings.embedQuery(scenario.question);
+    // Batch tooling waits out rate limits; the request path never does.
+    const embedding = await app.embeddings.embedQuery(scenario.question, { maxWaitMs: 5 * 60_000 });
     const results = await app.chunks.search(embedding, 3);
     rows.push({
       expect: scenario.expect,

@@ -4,6 +4,7 @@
  */
 
 import { createApp } from '../src/app.ts';
+import { isAppError } from '../src/errors/index.ts';
 import { INJECTION_CANARY, SCENARIOS, type Scenario } from '../src/verification/scenarios.ts';
 import type { AnswerResult } from '../src/domain/types.ts';
 
@@ -46,6 +47,13 @@ const outcomes: Outcome[] = [];
  *  are reported as skipped rather than counted as failures. */
 const lexicalOnly = app.embeddings.model === 'deterministic-v1';
 
+/**
+ * Spacing between scenarios, derived from the configured per-minute budget.
+ * Each scenario costs one embedding call plus at most one generation call.
+ */
+const rpm = app.config.llm.pool[0]?.limits.rpm ?? null;
+const paceMs = lexicalOnly || rpm === null ? 0 : Math.ceil((60_000 / rpm) * 2) + 250;
+
 try {
   const chunkCount = await app.chunks.count();
   if (chunkCount === 0) {
@@ -70,18 +78,35 @@ try {
       continue;
     }
 
-    try {
-      const result = await app.answers.ask(scenario.question);
-      const { pass, note } = judge(scenario, result);
-      outcomes.push({ scenario, result, verdict: pass ? 'PASS' : 'FAIL', note });
-    } catch (error) {
-      outcomes.push({
-        scenario,
-        result: null,
-        verdict: 'FAIL',
-        note: `threw: ${error instanceof Error ? error.message : String(error)}`,
-      });
+    // The ask path deliberately fails fast on a spent budget, so this batch
+    // runner paces itself and retries once after a window rather than making
+    // request handling patient on its behalf.
+    let result: AnswerResult | null = null;
+    let note = '';
+
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        result = await app.answers.ask(scenario.question);
+        break;
+      } catch (error) {
+        note = `threw: ${error instanceof Error ? error.message : String(error)}`;
+        const exhausted = isAppError(error) && error.code === 'all_providers_exhausted';
+        if (!exhausted || attempt === 1) break;
+        process.stdout.write('  … rate limited, waiting for the window to reopen\n');
+        await new Promise((resolve) => setTimeout(resolve, 62_000));
+      }
     }
+
+    if (result === null) {
+      outcomes.push({ scenario, result: null, verdict: 'FAIL', note });
+      continue;
+    }
+
+    const { pass, note: verdictNote } = judge(scenario, result);
+    outcomes.push({ scenario, result, verdict: pass ? 'PASS' : 'FAIL', note: verdictNote });
+
+    // Stay under the per-minute budget instead of provoking a cooldown.
+    if (paceMs > 0) await new Promise((resolve) => setTimeout(resolve, paceMs));
   }
 
   const width = 13;

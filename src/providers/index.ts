@@ -30,6 +30,13 @@ export type { PoolEvent, PoolStatus } from './pool/credential-pool.ts';
 /** Gemini accepts up to 100 inputs per embed call; 32 keeps payloads modest. */
 const EMBED_BATCH_SIZE = 32;
 
+/**
+ * Ingestion waits out a rate-limit window rather than abandoning a half-built
+ * index. Queries never wait — a person asking a question will not sit through
+ * a cooldown, and failing fast is the honest answer there.
+ */
+const INGEST_MAX_WAIT_MS = 10 * 60_000;
+
 export interface PooledLlmResponse extends LlmResponse {
   provider: string;
   credentialId: string;
@@ -43,6 +50,12 @@ export interface PooledLlm {
 }
 
 export interface PooledEmbeddings extends EmbeddingProvider {
+  /**
+   * `maxWaitMs` lets offline tooling (calibration, verification) wait out a
+   * rate-limit window. Request handling omits it and fails fast, because a
+   * person waiting on an answer should not be parked for a cooldown.
+   */
+  embedQuery(text: string, options?: { maxWaitMs?: number }): Promise<number[]>;
   status(): PoolStatus;
   hydrate(): Promise<void>;
 }
@@ -166,21 +179,27 @@ export function createPooledEmbeddings(config: Config, deps: PoolDeps): PooledEm
 
       for (let start = 0; start < texts.length; start += EMBED_BATCH_SIZE) {
         const batch = texts.slice(start, start + EMBED_BATCH_SIZE);
-        const result = await pool.execute(async (credential) => ({
-          value: await instanceFor(credential).embedDocuments(batch),
-          tokens: estimateTokens(batch),
-        }));
+        const result = await pool.execute(
+          async (credential) => ({
+            value: await instanceFor(credential).embedDocuments(batch),
+            tokens: estimateTokens(batch),
+          }),
+          { maxWaitMs: INGEST_MAX_WAIT_MS },
+        );
         output.push(...result.value);
       }
 
       return output;
     },
 
-    async embedQuery(text) {
-      const result = await pool.execute(async (credential) => ({
-        value: await instanceFor(credential).embedQuery(text),
-        tokens: estimateTokens([text]),
-      }));
+    async embedQuery(text, options) {
+      const result = await pool.execute(
+        async (credential) => ({
+          value: await instanceFor(credential).embedQuery(text),
+          tokens: estimateTokens([text]),
+        }),
+        { maxWaitMs: options?.maxWaitMs ?? 0 },
+      );
       return result.value;
     },
 
