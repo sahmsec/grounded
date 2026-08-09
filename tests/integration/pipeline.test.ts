@@ -24,9 +24,12 @@ import { silentLogger } from '../../src/logging/logger.ts';
 import { CANONICAL_REFUSAL } from '../../src/rag/protocol.ts';
 import { INJECTION_CANARY, SCENARIOS } from '../../src/verification/scenarios.ts';
 import type { AnswerResult } from '../../src/domain/types.ts';
+import { ensureTestDatabase, TEST_DATABASE_URL } from '../helpers/database.ts';
 
 const OFFLINE_ENV = {
-  DATABASE_URL: process.env.DATABASE_URL ?? 'postgres://grounded:grounded@localhost:5433/grounded',
+  // A dedicated database. This suite truncates and re-seeds on every run, so
+  // sharing one with development silently replaces the indexed corpus.
+  DATABASE_URL: TEST_DATABASE_URL,
   LLM_POOL: 'stub',
   EMBEDDING_POOL: 'deterministic',
   EMBEDDING_DIMENSIONS: '768',
@@ -47,6 +50,7 @@ const answers = new Map<string, AnswerResult>();
 const OFFLINE_SCENARIOS = SCENARIOS.filter((scenario) => !scenario.requiresSemantics);
 
 beforeAll(async () => {
+  await ensureTestDatabase();
   app = await createApp({ env: OFFLINE_ENV, logger: silentLogger, migrate: true });
 
   await app.documents.deleteAll();

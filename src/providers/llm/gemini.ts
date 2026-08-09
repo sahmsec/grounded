@@ -8,13 +8,22 @@ import type { LlmProvider, LlmRequest, LlmResponse } from './types.ts';
  * against maxOutputTokens — leaving it on can consume the whole budget and
  * return empty text.
  *
- * The two model families disagree on how to say that. Gemini 2.x takes a
- * numeric `thinkingBudget` and rejects `thinkingLevel`; Gemini 3.x is the
- * reverse and returns a bare `400 INVALID_ARGUMENT` for the older field,
- * which looks like a malformed request rather than an unsupported option.
+ * The model families disagree on how to say that. Gemini 1.x and 2.x take a
+ * numeric `thinkingBudget` and reject `thinkingLevel`; everything newer is the
+ * reverse and returns a bare `400 INVALID_ARGUMENT` for the older field, which
+ * reads as a malformed request rather than an unsupported option.
+ *
+ * The check is written as "old models opt out" rather than "new models opt in"
+ * so that version aliases (`gemini-flash-latest`) and future releases get the
+ * current field by default instead of failing until someone adds a case.
+ *
+ * Note that thinking tokens are charged against `maxOutputTokens`. Even at LOW
+ * a reply can spend a couple of hundred on them, so a small output budget
+ * yields an empty completion rather than a short one.
  */
 function thinkingConfigFor(model: string): Record<string, unknown> {
-  return /gemini-3/i.test(model) ? { thinkingLevel: 'LOW' } : { thinkingBudget: 0 };
+  const legacy = /gemini-[12][.-]/i.test(model);
+  return legacy ? { thinkingBudget: 0 } : { thinkingLevel: 'LOW' };
 }
 
 export function createGeminiLlm(apiKey: string, model: string): LlmProvider {

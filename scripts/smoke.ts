@@ -45,7 +45,10 @@ for (const credential of config.llm.pool) {
     const reply = await provider.generate({
       system: 'Reply with exactly one word.',
       user: 'Say OK.',
-      maxTokens: 16,
+      // The configured budget, not a token or two: thinking is charged against
+      // maxOutputTokens, so a tiny cap fails here while production succeeds —
+      // a smoke test that does not match production tests the wrong thing.
+      maxTokens: config.llm.maxOutputTokens,
       temperature: 0,
     });
     process.stdout.write(`  ok    generation  ${label} — "${reply.text.trim().slice(0, 40)}"\n`);
