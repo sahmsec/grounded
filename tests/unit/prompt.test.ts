@@ -83,10 +83,22 @@ describe('SYSTEM_PROMPT', () => {
     expect(SYSTEM_PROMPT).toMatch(/every factual claim must come from the excerpts/i);
   });
 
-  it('requires invented illustrations to be recognisable as such', () => {
-    // The one real risk of loosening the prompt is an example being read as
-    // course content.
-    expect(SYSTEM_PROMPT).toMatch(/recognisable as your explanation/i);
+  it('marks invented illustrations by the absence of a citation', () => {
+    // The risk of loosening the prompt is an example being read as course
+    // content. Labelling each one produced robotic asides, so the signal is
+    // structural instead: sourced claims carry a marker, the model's own
+    // explanations do not.
+    expect(SYSTEM_PROMPT).toMatch(/carries no citation/i);
+    expect(SYSTEM_PROMPT).toMatch(/do not label it as an illustration/i);
+  });
+
+  it('keeps citation density low enough to read', () => {
+    expect(SYSTEM_PROMPT).toMatch(/at most one marker per paragraph/i);
+  });
+
+  it('asks for Markdown, and only as much as the answer needs', () => {
+    expect(SYSTEM_PROMPT).toMatch(/use markdown/i);
+    expect(SYSTEM_PROMPT).toMatch(/short answers are plain paragraphs/i);
   });
 });
 

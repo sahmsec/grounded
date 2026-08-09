@@ -9,56 +9,62 @@
      not explicitly chosen light, or when they explicitly choose dark. Every
      colour is a token so no rule is defined inside a single theme's block. */
   :root {
-    --bg:#FFFFFF;
+    --bg:#FDFDFE;
     --glow: 118, 150, 255;
-    --glow-strength: .18;
-    --field:#F0F4F9;
-    --field-hover:#E8EEF7;
-    --raised:#F4F6FA;
-    --ink:#1F1F22;
-    --ink-2:#5C606A;
-    --ink-3:#8C919B;
+    --glow-strength: .16;
+    --field:#F1F4FA;
+    --field-hover:#E9EEF7;
+    --raised:#F5F7FB;
+    --line:#E4E8F0;
+    --ink:#1B1D24;
+    --ink-2:#575C68;
+    --ink-3:#878D9A;
     --accent:#2B62D9;
     --accent-ink:#FFFFFF;
     --flag:#8A5A05;
     --flag-bg:#FBF1DF;
+    --flag-line:#EBDCBB;
     --error:#B3261E;
     --sans: "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", sans-serif;
     --mono: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg:#0E0E10;
-      --glow: 46, 84, 196;
-      --glow-strength: .40;
-      --field:#1D1E21;
-      --field-hover:#25262A;
-      --raised:#191A1D;
-      --ink:#E5E6E9;
-      --ink-2:#A6AAB2;
-      --ink-3:#787D86;
-      --accent:#8CA6F8;
-      --accent-ink:#0E0E10;
-      --flag:#DFAC53;
-      --flag-bg:#2A2110;
-      --error:#F09A9A;
+      --bg:#14161D;
+      --glow: 64, 98, 214;
+      --glow-strength: .34;
+      --field:#212533;
+      --field-hover:#282D3D;
+      --raised:#1B1F2A;
+      --line:#2B3040;
+      --ink:#E9EBF2;
+      --ink-2:#A8AEBE;
+      --ink-3:#79808F;
+      --accent:#93A9FF;
+      --accent-ink:#14161D;
+      --flag:#E3AE58;
+      --flag-bg:#2E2415;
+      --flag-line:#463620;
+      --error:#F0918F;
     }
   }
   :root[data-theme="dark"] {
-    --bg:#0E0E10;
-    --glow: 46, 84, 196;
-    --glow-strength: .40;
-    --field:#1D1E21;
-    --field-hover:#25262A;
-    --raised:#191A1D;
-    --ink:#E5E6E9;
-    --ink-2:#A6AAB2;
-    --ink-3:#787D86;
-    --accent:#8CA6F8;
-    --accent-ink:#0E0E10;
-    --flag:#DFAC53;
-    --flag-bg:#2A2110;
-    --error:#F09A9A;
+    --bg:#14161D;
+    --glow: 64, 98, 214;
+    --glow-strength: .34;
+    --field:#212533;
+    --field-hover:#282D3D;
+    --raised:#1B1F2A;
+    --line:#2B3040;
+    --ink:#E9EBF2;
+    --ink-2:#A8AEBE;
+    --ink-3:#79808F;
+    --accent:#93A9FF;
+    --accent-ink:#14161D;
+    --flag:#E3AE58;
+    --flag-bg:#2E2415;
+    --flag-line:#463620;
+    --error:#F0918F;
   }
 
   * { box-sizing: border-box; }
@@ -101,7 +107,7 @@
     border-radius: 999px; padding: 7px 14px; font-size: 13.5px;
     display: flex; align-items: center; gap: 7px; transition: background .15s, color .15s;
   }
-  .chip:hover { background: var(--raised); color: var(--ink); }
+  .chip:hover { background: var(--raised); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
   .chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .chip svg { display: block; }
   .chip .caret { transition: transform .2s; }
@@ -121,13 +127,13 @@
   .topics[hidden] { display: none; }
   .topics-inner {
     max-width: 820px; margin: 0 auto; background: var(--raised);
-    border-radius: 20px; padding: 17px 20px;
+    border: 1px solid var(--line); border-radius: 18px; padding: 17px 20px;
     display: flex; flex-wrap: wrap; gap: 8px;
   }
   .topics-inner p { width: 100%; margin: 0 0 6px; font-size: 13px; color: var(--ink-3); }
   .topic {
     font-size: 13px; color: var(--ink-2); background: var(--bg);
-    border-radius: 999px; padding: 4px 13px;
+    border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px;
   }
 
   /* ─────────── stage / thread ─────────── */
@@ -157,7 +163,8 @@
 
   .asked { display: flex; justify-content: flex-end; margin-bottom: 28px; }
   .asked span {
-    background: var(--field); border-radius: 22px; padding: 12px 20px;
+    background: var(--field); border: 1px solid var(--line);
+    border-radius: 22px; padding: 12px 20px;
     max-width: 84%; white-space: pre-wrap; overflow-wrap: anywhere;
   }
 
@@ -166,13 +173,44 @@
   .glyph svg { display: block; }
   .body { flex: 1; min-width: 0; }
 
-  .answer { white-space: pre-wrap; overflow-wrap: anywhere; }
+  .answer { overflow-wrap: anywhere; }
+  .answer > *:first-child { margin-top: 0; }
+  .answer > *:last-child { margin-bottom: 0; }
+  .answer p { margin: 0 0 14px; }
+  .answer h2, .answer h3 {
+    margin: 26px 0 10px; font-size: 16px; font-weight: 650; letter-spacing: -.008em;
+  }
+  .answer ul, .answer ol { margin: 0 0 14px; padding-left: 24px; }
+  .answer li { margin-bottom: 6px; }
+  .answer li > p { margin: 0; }
+  .answer strong { font-weight: 650; }
+  .answer em { font-style: italic; }
+  .answer code {
+    font-family: var(--mono); font-size: .87em; background: var(--raised);
+    border: 1px solid var(--line); padding: 1px 5px; border-radius: 5px;
+  }
+  .answer pre {
+    background: var(--raised); border: 1px solid var(--line); border-radius: 10px;
+    padding: 13px 15px; overflow-x: auto; margin: 0 0 14px;
+  }
+  .answer pre code { background: none; padding: 0; font-size: 13px; }
+  /* Citations sit inline as quiet superscripts rather than bracketed digits
+     interrupting the sentence. */
+  .cite-ref {
+    font-family: var(--mono); font-size: 10px; font-weight: 600;
+    color: var(--accent); background: var(--raised);
+    border: 1px solid var(--line);
+    border-radius: 4px; padding: 0 4px; margin: 0 1px;
+    vertical-align: super; line-height: 1;
+  }
   .refused .answer { color: var(--ink-2); }
+  .plain { white-space: pre-wrap; overflow-wrap: anywhere; }
 
   /* Only the exception is marked; an ordinary answer wears no decoration. */
   .flag {
     display: inline-block; font-size: 12.5px; font-weight: 600; color: var(--flag);
-    background: var(--flag-bg); border-radius: 999px; padding: 3px 12px; margin-bottom: 12px;
+    background: var(--flag-bg); border: 1px solid var(--flag-line);
+    border-radius: 999px; padding: 3px 12px; margin-bottom: 12px;
   }
   .flag.is-error { color: var(--error); background: none; box-shadow: inset 0 0 0 1px currentColor; }
 
@@ -183,8 +221,11 @@
   }
   .source {
     display: flex; gap: 11px; align-items: baseline; font-size: 14px; color: var(--ink-2);
-    background: var(--raised); border-radius: 13px; padding: 9px 15px; margin-bottom: 6px;
+    background: var(--raised); border: 1px solid var(--line);
+    border-radius: 12px; padding: 10px 15px; margin-bottom: 6px;
+    transition: border-color .14s;
   }
+  .source:hover { border-color: var(--accent); }
   .source:last-child { margin-bottom: 0; }
   .source .n { font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); flex: none; }
   .source .name { color: var(--ink); }
@@ -202,10 +243,14 @@
 
   .field {
     display: flex; align-items: flex-end; gap: 10px;
-    background: var(--field); border-radius: 30px; padding: 9px 9px 9px 24px;
-    transition: background .15s;
+    background: var(--field); border: 1px solid var(--line);
+    border-radius: 28px; padding: 9px 9px 9px 22px;
+    transition: background .15s, border-color .15s, box-shadow .15s;
   }
-  .field:focus-within { background: var(--field-hover); }
+  .field:focus-within {
+    background: var(--field-hover); border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
+  }
   textarea {
     flex: 1; border: 0; background: none; resize: none; font: inherit; color: var(--ink);
     padding: 14px 0; line-height: 1.5; min-height: 28px; max-height: 200px;
@@ -385,6 +430,104 @@
     return node;
   }
 
+  /**
+   * A small Markdown renderer built from DOM nodes.
+   *
+   * Deliberately not innerHTML: this text is model output derived from
+   * retrieved third-party material, so building it as markup would be an
+   * injection hole in a tool whose whole subject is injection. Text always
+   * arrives through textContent; only structure is created as elements.
+   */
+  const INLINE = /(\*\*[^*]+\*\*|\*[^*\n]+\*|`[^`]+`|\[\d+(?:\s*,\s*\d+)*\])/g;
+
+  function renderInline(target, text) {
+    for (const part of text.split(INLINE)) {
+      if (!part) continue;
+
+      if (/^\*\*[^*]+\*\*$/.test(part)) {
+        target.append(el('strong', null, part.slice(2, -2)));
+      } else if (/^\*[^*]+\*$/.test(part)) {
+        target.append(el('em', null, part.slice(1, -1)));
+      } else if (/^`[^`]+`$/.test(part)) {
+        target.append(el('code', null, part.slice(1, -1)));
+      } else if (/^\[\d+(\s*,\s*\d+)*\]$/.test(part)) {
+        target.append(el('span', 'cite-ref', part.slice(1, -1).replace(/\s+/g, '')));
+      } else {
+        target.append(document.createTextNode(part));
+      }
+    }
+  }
+
+  function renderMarkdown(text) {
+    const root = document.createElement('div');
+    const lines = String(text).split('\n');
+    let list = null;
+
+    const closeList = () => { list = null; };
+
+    for (let index = 0; index < lines.length; index += 1) {
+      const line = lines[index];
+      const trimmed = line.trim();
+
+      if (trimmed === '') { closeList(); continue; }
+
+      // Fenced code: copied verbatim, never parsed for inline markup.
+      if (/^```/.test(trimmed)) {
+        closeList();
+        const body = [];
+        index += 1;
+        while (index < lines.length && !/^```/.test(lines[index].trim())) {
+          body.push(lines[index]);
+          index += 1;
+        }
+        const pre = el('pre');
+        pre.append(el('code', null, body.join('\n')));
+        root.append(pre);
+        continue;
+      }
+
+      const heading = /^(#{1,6})\s+(.*)$/.exec(trimmed);
+      if (heading) {
+        closeList();
+        // Everything renders as h3: the answer already sits under the page's
+        // own hierarchy, so honouring #/## would jump heading levels.
+        const node = el('h3');
+        renderInline(node, heading[2]);
+        root.append(node);
+        continue;
+      }
+
+      const bullet = /^[-*+]\s+(.*)$/.exec(trimmed);
+      const numbered = /^(\d+)[.)]\s+(.*)$/.exec(trimmed);
+
+      if (bullet || numbered) {
+        const wanted = bullet ? 'UL' : 'OL';
+        if (!list || list.tagName !== wanted) {
+          list = el(bullet ? 'ul' : 'ol');
+          root.append(list);
+        }
+        const item = el('li');
+        renderInline(item, (bullet ? bullet[1] : numbered[2]));
+        list.append(item);
+        continue;
+      }
+
+      closeList();
+      const last = root.lastElementChild;
+      if (last && last.tagName === 'P') {
+        // A soft-wrapped continuation of the paragraph above.
+        last.append(document.createTextNode(' '));
+        renderInline(last, trimmed);
+      } else {
+        const paragraph = el('p');
+        renderInline(paragraph, trimmed);
+        root.append(paragraph);
+      }
+    }
+
+    return root;
+  }
+
   function shield() {
     const ns = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS(ns, 'svg');
@@ -417,7 +560,11 @@
 
     const body = el('div', 'body');
     if (!result.answered) body.append(el('span', 'flag', 'Not in the course material'));
-    body.append(el('div', 'answer', result.text));
+
+    const answer = el('div', 'answer');
+    if (result.answered) answer.append(renderMarkdown(result.text));
+    else { answer.classList.add('plain'); answer.textContent = result.text; }
+    body.append(answer);
 
     // Five passages from one document listed five times is noise. Group by
     // document and show which markers came from it.
