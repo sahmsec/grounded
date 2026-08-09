@@ -6,323 +6,227 @@
 <title>grounded — course assistant</title>
 <style>
   :root {
-    --paper:#F3F4FB;
-    --card:#FFFFFF;
-    --card-2:#F8F9FE;
-    --ink:#15152C;
-    --muted:#64648220;
-    --text-2:#5A5A78;
-    --text-3:#8B8BA6;
-    --line:#E4E5F3;
-    --brand:#2B2870;
-    --brand-2:#413CA0;
-    --on-brand:#FFFFFF;
-    --accent:#FF5C39;
+    --bg:#FFFFFF;
+    --surface:#F0F4F9;
+    --surface-2:#E9EEF6;
+    --ink:#1F1F22;
+    --ink-2:#5B5F66;
+    --ink-3:#8E9299;
+    --hairline:#E3E6EB;
+    --accent:#2B62D9;
+    --accent-2:#6B4FD8;
     --accent-ink:#FFFFFF;
-    --verified:#00926B;
-    --verified-soft:#E1F5EE;
-    --held:#C97C00;
-    --held-soft:#FCF0DC;
-    --fail:#D4343F;
-    --fail-soft:#FCE7E8;
-    --radius:12px;
-    --sans: "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", sans-serif;
-    --mono: ui-monospace, "Cascadia Code", "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
-    --shadow: 0 1px 2px rgba(21,21,44,.05), 0 8px 24px -12px rgba(21,21,44,.14);
+    --flag:#8A5A05;
+    --flag-bg:#FDF3E2;
+    --error:#B3261E;
+    --sans: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", sans-serif;
+    --mono: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --paper:#0C0C17;
-      --card:#15152A;
-      --card-2:#1B1B33;
-      --ink:#ECEDF8;
-      --text-2:#A3A3C0;
-      --text-3:#75759A;
-      --line:#26264A;
-      --brand:#1D1B4A;
-      --brand-2:#332E86;
-      --accent:#FF6E4E;
-      --verified:#31C79B;
-      --verified-soft:#0E3329;
-      --held:#E5A63C;
-      --held-soft:#33260F;
-      --fail:#EF5F68;
-      --fail-soft:#361619;
-      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px -14px rgba(0,0,0,.7);
+      --bg:#131316;
+      --surface:#1E1F24;
+      --surface-2:#282A30;
+      --ink:#E8E8EC;
+      --ink-2:#A8ACB4;
+      --ink-3:#787D85;
+      --hairline:#2A2C32;
+      --accent:#8AA6F5;
+      --accent-2:#B49CF7;
+      --accent-ink:#101014;
+      --flag:#DFAC53;
+      --flag-bg:#2A2110;
+      --error:#F2A0A0;
     }
   }
 
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
   body {
-    background: var(--paper); color: var(--ink);
-    font-family: var(--sans); font-size: 15.5px; line-height: 1.6;
-    -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+    background: var(--bg); color: var(--ink);
+    font-family: var(--sans); font-size: 16px; line-height: 1.72;
+    -webkit-font-smoothing: antialiased;
     display: flex; flex-direction: column;
   }
-  ::selection { background: var(--accent); color: var(--accent-ink); }
+  button { font: inherit; }
 
-  /* ══════════ masthead ══════════ */
-  .masthead {
-    background: var(--brand); color: var(--on-brand); position: relative; overflow: hidden;
-    padding: 22px 0 26px;
-  }
-  /* Faint diagonal weave — texture, not decoration; keeps the band from
-     reading as a flat block of colour. */
-  .masthead::before {
-    content: ""; position: absolute; inset: 0; opacity: .07; pointer-events: none;
-    background-image: repeating-linear-gradient(58deg, #fff 0 1px, transparent 1px 13px);
-  }
-  .masthead-inner {
-    position: relative; max-width: 880px; margin: 0 auto; padding: 0 24px;
-    display: flex; flex-wrap: wrap; align-items: center; gap: 14px 20px;
-  }
-  .mark {
-    width: 34px; height: 34px; border-radius: 9px; flex: none;
-    background: var(--accent); display: grid; place-items: center;
-  }
-  .mark svg { display: block; }
-  .titles { margin-right: auto; }
-  .titles h1 {
-    margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -.022em; line-height: 1.15;
-  }
-  .titles p { margin: 2px 0 0; font-size: 13.5px; opacity: .74; }
-  .live {
-    display: inline-flex; align-items: center; gap: 8px;
-    font-family: var(--mono); font-size: 11.5px; letter-spacing: .02em;
-    background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.16);
-    border-radius: 999px; padding: 5px 12px 5px 10px;
-  }
-  .live i { width: 7px; height: 7px; border-radius: 50%; background: #7de3bd; flex: none; }
-  .live.is-down i { background: #ff8f8f; }
+  /* ─────────── top bar ─────────── */
+  .bar { flex: none; height: 62px; display: flex; align-items: center; padding: 0 22px; gap: 12px; }
+  .brand { display: flex; align-items: center; gap: 9px; margin-right: auto; }
+  .brand svg { display: block; color: var(--accent); }
+  .brand b { font-size: 17px; font-weight: 600; letter-spacing: -.012em; color: var(--ink-2); }
 
-  /* ══════════ scope strip ══════════ */
-  .scope { background: var(--brand-2); color: var(--on-brand); }
-  .scope-inner {
-    max-width: 880px; margin: 0 auto; padding: 11px 24px;
-    display: flex; align-items: center; gap: 10px; overflow-x: auto; scrollbar-width: thin;
+  .topics-btn {
+    border: 0; background: var(--surface); color: var(--ink-2); cursor: pointer;
+    border-radius: 999px; padding: 7px 15px; font-size: 13.5px;
+    display: flex; align-items: center; gap: 8px; transition: background .14s;
   }
-  .scope-label {
-    font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
-    opacity: .68; white-space: nowrap; flex: none;
+  .topics-btn:hover { background: var(--surface-2); }
+  .topics-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .topics-btn svg { transition: transform .18s; }
+  .topics-btn[aria-expanded="true"] svg { transform: rotate(180deg); }
+
+  .topics { flex: none; padding: 0 22px 6px; }
+  .topics[hidden] { display: none; }
+  .topics-inner {
+    max-width: 780px; margin: 0 auto; background: var(--surface);
+    border-radius: 18px; padding: 18px 22px;
+    display: flex; flex-wrap: wrap; gap: 8px;
   }
-  .module {
-    font-size: 12.5px; white-space: nowrap; flex: none;
-    background: rgba(255,255,255,.13); border-radius: 999px; padding: 4px 11px;
+  .topics-inner p { width: 100%; margin: 0 0 6px; font-size: 13px; color: var(--ink-3); }
+  .topic {
+    font-size: 13px; color: var(--ink-2); background: var(--bg);
+    border-radius: 999px; padding: 4px 13px;
   }
 
-  /* ══════════ thread ══════════ */
+  /* ─────────── thread ─────────── */
   main { flex: 1; overflow-y: auto; }
-  .thread { max-width: 880px; margin: 0 auto; padding: 28px 24px 12px; }
+  .thread { max-width: 780px; margin: 0 auto; padding: 20px 22px 8px; }
 
-  .welcome {
-    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
-    padding: 26px 28px; box-shadow: var(--shadow); margin-bottom: 28px;
+  .greeting { padding: 12vh 0 0; }
+  .greeting h1 {
+    margin: 0 0 6px; font-size: clamp(32px, 6vw, 46px); font-weight: 600;
+    letter-spacing: -.032em; line-height: 1.1;
+    background: linear-gradient(96deg, var(--accent) 8%, var(--accent-2) 78%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    width: fit-content;
   }
-  .welcome h2 { margin: 0 0 8px; font-size: 21px; font-weight: 700; letter-spacing: -.02em; }
-  .welcome p { margin: 0 0 14px; color: var(--text-2); max-width: 62ch; }
-  .welcome p:last-child { margin-bottom: 0; }
-  .welcome strong { color: var(--ink); font-weight: 620; }
-
-  .turn { margin-bottom: 26px; animation: rise .26s cubic-bezier(.22,.8,.3,1) both; }
-  @keyframes rise { from { opacity: 0; transform: translateY(7px); } }
-  @media (prefers-reduced-motion: reduce) { .turn { animation: none; } }
-
-  .asked {
-    display: flex; justify-content: flex-end; margin-bottom: 14px;
+  .greeting p {
+    margin: 0; font-size: clamp(21px, 3.6vw, 29px); font-weight: 500;
+    letter-spacing: -.022em; color: var(--ink-3); line-height: 1.25;
   }
+
+  .turn { margin-bottom: 42px; }
+
+  .asked { display: flex; justify-content: flex-end; margin-bottom: 30px; }
   .asked span {
-    background: var(--brand); color: var(--on-brand);
-    border-radius: 14px 14px 4px 14px; padding: 11px 16px;
-    max-width: 78%; white-space: pre-wrap; overflow-wrap: anywhere;
+    background: var(--surface); border-radius: 22px; padding: 12px 19px;
+    max-width: 84%; white-space: pre-wrap; overflow-wrap: anywhere;
   }
 
-  .reply { display: flex; gap: 13px; align-items: flex-start; }
-  .avatar {
-    width: 30px; height: 30px; border-radius: 9px; flex: none; margin-top: 3px;
-    display: grid; place-items: center; background: var(--verified-soft);
+  .reply { display: flex; gap: 16px; align-items: flex-start; }
+  .glyph {
+    flex: none; width: 26px; height: 26px; margin-top: 4px;
+    display: grid; place-items: center; color: var(--accent);
   }
-  .is-refused .avatar { background: var(--held-soft); }
-  .is-failed .avatar { background: var(--fail-soft); }
-  .avatar svg { display: block; }
+  .glyph svg { display: block; }
+  .body { flex: 1; min-width: 0; }
 
-  .bubble {
-    flex: 1; min-width: 0; background: var(--card); border: 1px solid var(--line);
-    border-radius: 4px 14px 14px 14px; box-shadow: var(--shadow); overflow: hidden;
-  }
+  .answer { white-space: pre-wrap; overflow-wrap: anywhere; }
+  .refused .answer { color: var(--ink-2); }
 
-  .strip {
-    display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px;
-    padding: 10px 18px; border-bottom: 1px solid var(--line); background: var(--card-2);
+  /* Only the exception is marked; a normal answer wears no decoration. */
+  .flag {
+    display: inline-block; font-size: 12.5px; font-weight: 600; color: var(--flag);
+    background: var(--flag-bg); border-radius: 999px; padding: 3px 12px; margin-bottom: 12px;
   }
-  .verdict {
-    font-size: 10.5px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase;
-  }
-  .is-answered .verdict { color: var(--verified); }
-  .is-refused  .verdict { color: var(--held); }
-  .is-failed   .verdict { color: var(--fail); }
+  .flag.is-error { color: var(--error); background: none; box-shadow: inset 0 0 0 1px currentColor; }
 
-  /* Signature: a signal meter. Filled bars are the measured similarity, the
-     taller notch is the gate. You can see the decision, not just its result. */
-  .signal { display: flex; align-items: flex-end; gap: 2px; height: 17px; margin-left: auto; }
-  .signal i {
-    width: 4px; border-radius: 1px; background: var(--line); display: block;
-  }
-  .signal i.on { background: var(--verified); }
-  .is-refused .signal i.on { background: var(--held); }
-  .signal i.gate { background: var(--text-3); height: 17px !important; width: 2px; }
-  .readout {
-    font-family: var(--mono); font-size: 11.5px; font-variant-numeric: tabular-nums;
-    color: var(--text-2); white-space: nowrap;
-  }
-  .readout b { color: var(--ink); font-weight: 600; }
-
-  .answer { padding: 17px 18px; white-space: pre-wrap; overflow-wrap: anywhere; }
-  .is-refused .answer { color: var(--text-2); }
-
-  .sources { padding: 0 18px 15px; }
+  .sources { margin-top: 22px; }
   .sources-head {
-    font-size: 10.5px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase;
-    color: var(--text-3); margin-bottom: 8px;
+    font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--ink-3); margin-bottom: 9px;
   }
   .source {
-    display: flex; align-items: baseline; gap: 9px; padding: 7px 11px; margin-bottom: 5px;
-    background: var(--card-2); border-radius: 8px; font-size: 13px;
+    display: flex; gap: 11px; align-items: baseline; font-size: 14px; color: var(--ink-2);
+    background: var(--surface); border-radius: 12px; padding: 9px 14px; margin-bottom: 6px;
   }
   .source:last-child { margin-bottom: 0; }
-  .source .num {
-    font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--verified);
-    background: var(--verified-soft); border-radius: 5px; padding: 1px 6px; flex: none;
-  }
-  .source .name { font-weight: 560; }
-  .source .cite {
-    margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--text-3);
-    white-space: nowrap; font-variant-numeric: tabular-nums;
-  }
+  .source .n { font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); flex: none; }
+  .source .name { color: var(--ink); }
+  .source .cite { margin-left: auto; font-size: 12.5px; color: var(--ink-3); white-space: nowrap; }
 
-  .footnote {
-    font-family: var(--mono); font-size: 10.5px; color: var(--text-3);
-    padding: 9px 18px; border-top: 1px solid var(--line);
-    display: flex; flex-wrap: wrap; gap: 6px 15px;
-  }
+  .meta { margin-top: 14px; font-size: 12.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 
-  .thinking {
-    display: flex; align-items: center; gap: 9px; padding: 13px 18px;
-    font-size: 13.5px; color: var(--text-3);
+  .waiting { color: var(--ink-3); }
+  .waiting::after {
+    content: "▍"; margin-left: 2px; animation: blink 1.05s steps(2, start) infinite;
   }
-  .thinking i {
-    width: 7px; height: 7px; border-radius: 50%; background: var(--accent);
-    animation: throb 1s ease-in-out infinite;
-  }
-  @keyframes throb { 0%,100% { opacity: .3; transform: scale(.8) } 50% { opacity: 1; transform: scale(1) } }
-  @media (prefers-reduced-motion: reduce) { .thinking i { animation: none } }
+  @keyframes blink { to { visibility: hidden } }
+  @media (prefers-reduced-motion: reduce) { .waiting::after { animation: none } }
 
-  /* ══════════ composer ══════════ */
-  .composer-wrap {
-    border-top: 1px solid var(--line); background: var(--card);
-    box-shadow: 0 -8px 24px -20px rgba(21,21,44,.5);
-  }
-  .composer { max-width: 880px; margin: 0 auto; padding: 15px 24px 20px; }
-
-  .suggestions { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 12px; }
-  .suggestion {
-    font: inherit; font-size: 12.5px; color: var(--text-2); cursor: pointer;
-    background: var(--card-2); border: 1px solid var(--line); border-radius: 999px;
-    padding: 5px 13px; transition: border-color .14s, color .14s, transform .14s;
-  }
-  .suggestion:hover { border-color: var(--accent); color: var(--ink); transform: translateY(-1px); }
-  .suggestion:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  /* ─────────── composer ─────────── */
+  .dock { flex: none; padding: 10px 22px 18px; background: var(--bg); }
+  .dock-inner { max-width: 780px; margin: 0 auto; }
 
   .field {
-    display: flex; gap: 10px; align-items: flex-end;
-    background: var(--card-2); border: 1.5px solid var(--line); border-radius: 14px; padding: 7px 7px 7px 15px;
-    transition: border-color .14s;
+    display: flex; align-items: flex-end; gap: 10px;
+    background: var(--surface); border-radius: 28px; padding: 8px 8px 8px 22px;
+    transition: background .14s, box-shadow .14s;
   }
-  .field:focus-within { border-color: var(--brand-2); }
+  .field:focus-within { background: var(--surface-2); box-shadow: 0 1px 10px rgba(0,0,0,.06); }
   textarea {
-    flex: 1; border: 0; background: none; resize: none; padding: 9px 0;
-    font: inherit; color: var(--ink); min-height: 24px; max-height: 168px; line-height: 1.5;
+    flex: 1; border: 0; background: none; resize: none; font: inherit; color: var(--ink);
+    padding: 12px 0; line-height: 1.5; min-height: 26px; max-height: 190px;
   }
   textarea:focus { outline: none; }
-  textarea::placeholder { color: var(--text-3); }
+  textarea::placeholder { color: var(--ink-3); }
 
   .send {
-    flex: none; border: 0; cursor: pointer; border-radius: 10px;
+    flex: none; width: 40px; height: 40px; border: 0; border-radius: 50%; cursor: pointer;
     background: var(--accent); color: var(--accent-ink);
-    width: 42px; height: 42px; display: grid; place-items: center;
-    transition: filter .14s, transform .1s;
+    display: grid; place-items: center; transition: opacity .14s;
   }
-  .send:hover:not(:disabled) { filter: brightness(1.07); }
-  .send:active:not(:disabled) { transform: scale(.94); }
-  .send:disabled { opacity: .4; cursor: default; }
-  .send:focus-visible { outline: 2px solid var(--brand-2); outline-offset: 2px; }
+  .send:disabled { opacity: .3; cursor: default; }
+  .send:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
   .send svg { display: block; }
 
-  .keyhint { font-size: 11.5px; color: var(--text-3); margin-top: 9px; }
+  .disclaimer { margin-top: 11px; text-align: center; font-size: 12px; color: var(--ink-3); }
 
-  @media (max-width: 640px) {
-    .thread, .composer, .masthead-inner, .scope-inner { padding-left: 16px; padding-right: 16px; }
-    .welcome { padding: 20px; }
-    .asked span { max-width: 88%; }
+  @media (max-width: 620px) {
+    .thread, .dock, .bar, .topics { padding-left: 15px; padding-right: 15px; }
+    .greeting { padding-top: 8vh; }
     .source { flex-wrap: wrap; }
-    .source .cite { margin-left: 0; width: 100%; }
-    .signal { margin-left: 0; }
+    .source .cite { margin-left: 0; }
   }
 </style>
 </head>
 <body>
 
-<header class="masthead">
-  <div class="masthead-inner">
-    <div class="mark" aria-hidden="true">
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-        <path d="M9 1.5 2.8 4.2v4.3c0 3.9 2.6 7.5 6.2 8.5 3.6-1 6.2-4.6 6.2-8.5V4.2L9 1.5Z"
-              stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/>
-        <path d="m6.3 9 1.9 1.9 3.5-3.6" stroke="#fff" stroke-width="1.6"
-              stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </div>
-    <div class="titles">
-      <h1>grounded</h1>
-      <p>Course assistant — answers from your syllabus, and says so when a topic isn't in it.</p>
-    </div>
-    <div class="live" id="live"><i></i><span id="live-text">connecting</span></div>
-  </div>
-</header>
+<div class="bar">
+  <span class="brand">
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path d="M10 2 3.2 5v4.8c0 4.3 2.9 8.3 6.8 9.4 3.9-1.1 6.8-5.1 6.8-9.4V5L10 2Z"
+            stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+    </svg>
+    <b>grounded</b>
+  </span>
+  <button class="topics-btn" id="topics-btn" aria-expanded="false" aria-controls="topics" hidden>
+    <span id="topics-count">Topics</span>
+    <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
+      <path d="m2.4 4.1 3.1 3.1 3.1-3.1" stroke="currentColor" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+</div>
 
-<div class="scope" id="scope" hidden>
-  <div class="scope-inner">
-    <span class="scope-label">Covers</span>
-    <div id="modules" style="display:flex;gap:7px"></div>
+<div class="topics" id="topics" hidden>
+  <div class="topics-inner" id="topics-list">
+    <p>Questions outside these topics are declined rather than guessed at.</p>
   </div>
 </div>
 
 <main>
   <div class="thread" id="thread">
-    <section class="welcome" id="welcome">
-      <h2>Ask anything from the course material.</h2>
-      <p>Answers come only from the modules listed above, and every one shows the passage it came from.
-         When a question falls outside them, you'll get <strong>a clear no rather than a confident guess</strong>
-         — which is the point.</p>
-      <p>Each reply carries the retrieval score behind it, so you can always see how strong the match was.</p>
-    </section>
+    <div class="greeting" id="greeting">
+      <h1>Hello</h1>
+      <p>What would you like to know?</p>
+    </div>
   </div>
 </main>
 
-<div class="composer-wrap">
-  <div class="composer">
-    <div class="suggestions" id="suggestions"></div>
+<div class="dock">
+  <div class="dock-inner">
     <div class="field">
-      <textarea id="input" rows="1" aria-label="Your question"
-                placeholder="Ask about a topic from the syllabus…"></textarea>
-      <button class="send" id="send" aria-label="Send question">
-        <svg width="19" height="19" viewBox="0 0 19 19" fill="none">
-          <path d="M3 9.5h12M9.8 4.3 15 9.5l-5.2 5.2" stroke="currentColor" stroke-width="1.9"
+      <textarea id="input" rows="1" aria-label="Your question" placeholder="Ask about the course material"></textarea>
+      <button class="send" id="send" aria-label="Send">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+          <path d="M9 14.5V4M4.2 8.8 9 4l4.8 4.8" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </button>
     </div>
-    <div class="keyhint">Enter to send · Shift + Enter for a new line</div>
+    <div class="disclaimer">Answers come only from the course material, with sources shown.</div>
   </div>
 </div>
 
@@ -332,118 +236,69 @@
   const input = document.getElementById('input');
   const send = document.getElementById('send');
 
-  let gate = 0.62;
-  const BARS = 18;
-
   function el(tag, className, text) {
     const node = document.createElement(tag);
     if (className) node.className = className;
-    // textContent everywhere. This page renders retrieved third-party text, so
-    // building markup out of it would be a real injection hole.
+    // textContent throughout. Replies carry retrieved third-party text, so
+    // rendering it as markup would be a genuine injection hole.
     if (text !== undefined) node.textContent = text;
     return node;
   }
 
-  function icon(paths, colour) {
+  function shield() {
     const ns = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS(ns, 'svg');
-    svg.setAttribute('width', '16'); svg.setAttribute('height', '16');
-    svg.setAttribute('viewBox', '0 0 16 16'); svg.setAttribute('fill', 'none');
-    for (const d of paths) {
-      const p = document.createElementNS(ns, 'path');
-      p.setAttribute('d', d);
-      p.setAttribute('stroke', colour);
-      p.setAttribute('stroke-width', '1.7');
-      p.setAttribute('stroke-linecap', 'round');
-      p.setAttribute('stroke-linejoin', 'round');
-      svg.append(p);
-    }
+    svg.setAttribute('width', '19'); svg.setAttribute('height', '19');
+    svg.setAttribute('viewBox', '0 0 20 20'); svg.setAttribute('fill', 'none');
+    const path = document.createElementNS(ns, 'path');
+    path.setAttribute('d', 'M10 2 3.2 5v4.8c0 4.3 2.9 8.3 6.8 9.4 3.9-1.1 6.8-5.1 6.8-9.4V5L10 2Z');
+    path.setAttribute('stroke', 'currentColor');
+    path.setAttribute('stroke-width', '1.5');
+    path.setAttribute('stroke-linejoin', 'round');
+    svg.append(path);
     return svg;
   }
 
-  const CHECK = ['m3.6 8.3 2.9 2.9L12.4 5'];
-  const HAND  = ['M8 4.6v4.2', 'M8 11.6h.01', 'M8 1.6 1.4 13.4h13.2L8 1.6Z'];
-  const CROSS = ['m4.5 4.5 7 7', 'm11.5 4.5-7 7'];
-
-  /** Signal meter: filled bars are the score, the notch is the gate. */
-  function meter(score) {
-    const wrap = el('div', 'signal');
-    const lit = score === null ? 0 : Math.round(Math.min(Math.max(score, 0), 1) * BARS);
-    const gateBar = Math.round(gate * BARS);
-
-    for (let index = 0; index < BARS; index += 1) {
-      if (index === gateBar) wrap.append(el('i', 'gate'));
-      const bar = el('i', index < lit ? 'on' : null);
-      bar.style.height = (5 + (index / BARS) * 11).toFixed(1) + 'px';
-      wrap.append(bar);
-    }
-    wrap.setAttribute('title', score === null
-      ? 'Nothing retrieved'
-      : 'Match strength ' + score.toFixed(4) + ' · answers need ' + gate);
-    return wrap;
-  }
-
   function renderReply(result) {
-    const state = result.answered ? 'answered' : 'refused';
-    const row = el('div', 'reply is-' + state);
+    const row = el('div', 'reply' + (result.answered ? '' : ' refused'));
+    const glyph = el('div', 'glyph');
+    glyph.append(shield());
+    row.append(glyph);
 
-    const avatar = el('div', 'avatar');
-    avatar.append(result.answered
-      ? icon(CHECK, 'var(--verified)')
-      : icon(HAND, 'var(--held)'));
-    row.append(avatar);
-
-    const bubble = el('div', 'bubble');
-
-    const strip = el('div', 'strip');
-    strip.append(el('span', 'verdict', result.answered ? 'Grounded answer' : 'Outside the syllabus'));
-    strip.append(meter(result.topSimilarity));
-
-    const readout = el('span', 'readout');
-    readout.append(el('b', null, result.topSimilarity === null ? '—' : result.topSimilarity.toFixed(3)));
-    readout.append(document.createTextNode(' match · ' + gate + ' needed'));
-    strip.append(readout);
-    bubble.append(strip);
-
-    bubble.append(el('div', 'answer', result.text));
+    const body = el('div', 'body');
+    if (!result.answered) body.append(el('span', 'flag', 'Not in the course material'));
+    body.append(el('div', 'answer', result.text));
 
     if (result.citations.length > 0) {
       const sources = el('div', 'sources');
-      sources.append(el('div', 'sources-head', 'From these passages'));
+      sources.append(el('div', 'sources-head', 'Sources'));
       for (const citation of result.citations) {
         const item = el('div', 'source');
-        item.append(el('span', 'num', String(citation.marker)));
+        item.append(el('span', 'n', String(citation.marker)));
         item.append(el('span', 'name', citation.documentTitle));
-        item.append(el('span', 'cite', citation.source + ' · ' + citation.similarity.toFixed(3)));
+        item.append(el('span', 'cite', citation.source));
         sources.append(item);
       }
-      bubble.append(sources);
+      body.append(sources);
     }
 
-    const foot = el('div', 'footnote');
-    foot.append(el('span', null, result.refusedWithoutModelCall
-      ? 'answered by retrieval alone — no model call'
-      : (result.meta.model ?? 'model') + ' · ' + (result.meta.credentialId ?? '—')));
-    foot.append(el('span', null, result.meta.candidatesConsidered + ' passages searched'));
-    foot.append(el('span', null, result.meta.latencyMs + ' ms'));
-    bubble.append(foot);
+    const score = result.topSimilarity === null ? '—' : result.topSimilarity.toFixed(2);
+    body.append(el('div', 'meta', `Match ${score} · ${result.meta.latencyMs} ms`));
 
-    row.append(bubble);
+    row.append(body);
     return row;
   }
 
   function renderFailure(message) {
-    const row = el('div', 'reply is-failed');
-    const avatar = el('div', 'avatar');
-    avatar.append(icon(CROSS, 'var(--fail)'));
-    row.append(avatar);
+    const row = el('div', 'reply');
+    const glyph = el('div', 'glyph');
+    glyph.append(shield());
+    row.append(glyph);
 
-    const bubble = el('div', 'bubble');
-    const strip = el('div', 'strip');
-    strip.append(el('span', 'verdict', 'Something broke'));
-    bubble.append(strip);
-    bubble.append(el('div', 'answer', message));
-    row.append(bubble);
+    const body = el('div', 'body');
+    body.append(el('span', 'flag is-error', 'Request failed'));
+    body.append(el('div', 'answer', message));
+    row.append(body);
     return row;
   }
 
@@ -451,7 +306,7 @@
     const question = input.value.trim();
     if (!question) return;
 
-    document.getElementById('welcome')?.remove();
+    document.getElementById('greeting')?.remove();
     input.value = '';
     resize();
     send.disabled = true;
@@ -462,13 +317,10 @@
     turn.append(asked);
 
     const waiting = el('div', 'reply');
-    const waitBubble = el('div', 'bubble');
-    const thinking = el('div', 'thinking');
-    thinking.append(el('i'));
-    thinking.append(el('span', null, 'Searching the course material'));
-    waitBubble.append(thinking);
-    waiting.append(el('div', 'avatar'));
-    waiting.append(waitBubble);
+    const waitGlyph = el('div', 'glyph');
+    waitGlyph.append(shield());
+    waiting.append(waitGlyph);
+    waiting.append(el('div', 'waiting', 'Searching the course material'));
     turn.append(waiting);
 
     thread.append(turn);
@@ -495,7 +347,7 @@
 
   function resize() {
     input.style.height = 'auto';
-    input.style.height = Math.min(input.scrollHeight, 168) + 'px';
+    input.style.height = Math.min(input.scrollHeight, 190) + 'px';
   }
 
   input.addEventListener('input', resize);
@@ -504,50 +356,25 @@
   });
   send.addEventListener('click', ask);
 
-  /** Suggestions are built from the indexed modules, so they always match the
-   *  corpus rather than drifting from it as the syllabus changes. */
-  function buildSuggestions(modules) {
-    const box = document.getElementById('suggestions');
-    for (const module of modules.slice(0, 4)) {
-      const button = el('button', 'suggestion', 'What is ' + module.title.toLowerCase() + '?');
-      button.type = 'button';
-      button.addEventListener('click', () => {
-        input.value = button.textContent;
-        resize(); input.focus();
-      });
-      box.append(button);
-    }
-    const offTopic = el('button', 'suggestion', 'Try something off-syllabus');
-    offTopic.type = 'button';
-    offTopic.addEventListener('click', () => {
-      input.value = 'What is a good recipe for pasta carbonara?';
-      resize(); input.focus();
-    });
-    box.append(offTopic);
-  }
+  const toggle = document.getElementById('topics-btn');
+  const panel = document.getElementById('topics');
+  toggle.addEventListener('click', () => {
+    const open = toggle.getAttribute('aria-expanded') === 'true';
+    toggle.setAttribute('aria-expanded', String(!open));
+    panel.hidden = open;
+  });
 
   (async () => {
     try {
-      const health = await (await fetch('/health')).json();
-      gate = health.gate.minTopSimilarity;
-
-      const ok = health.pools.llm === 'ok' && health.pools.embedding === 'ok';
-      document.getElementById('live').className = 'live' + (ok ? '' : ' is-down');
-      document.getElementById('live-text').textContent = ok ? 'ready' : 'degraded';
-    } catch {
-      document.getElementById('live').className = 'live is-down';
-      document.getElementById('live-text').textContent = 'offline';
-    }
-
-    try {
       const { modules } = await (await fetch('/modules')).json();
-      if (modules.length > 0) {
-        const list = document.getElementById('modules');
-        for (const module of modules) list.append(el('span', 'module', module.title));
-        document.getElementById('scope').hidden = false;
-        buildSuggestions(modules);
-      }
-    } catch { /* Scope strip stays hidden; the assistant still works. */ }
+      if (modules.length === 0) return;
+
+      document.getElementById('topics-count').textContent = `${modules.length} topics`;
+      toggle.hidden = false;
+
+      const list = document.getElementById('topics-list');
+      for (const module of modules) list.append(el('span', 'topic', module.title));
+    } catch { /* Header control stays hidden; asking still works. */ }
   })();
 
   input.focus();
