@@ -27,6 +27,15 @@ export const CANONICAL_REFUSAL =
   "I don't have information about that in my knowledge base, so I can't answer it. " +
   'I can only answer questions covered by the cybersecurity documentation I have been given.';
 
+/**
+ * The refusal in Bangla. Replying in English to a Bangla question reads as a
+ * malfunction rather than a boundary, so the fixed strings are translated
+ * rather than left to the model — a refusal must stay deterministic.
+ */
+export const CANONICAL_REFUSAL_BN =
+  'এই বিষয়ে আমার নলেজ বেসে কোনো তথ্য নেই, তাই আমি উত্তর দিতে পারছি না। ' +
+  'আমাকে যে সাইবার সিকিউরিটি কোর্স ম্যাটেরিয়াল দেওয়া হয়েছে, শুধু সেই বিষয়ের প্রশ্নের উত্তর দিতে পারি।';
+
 /** True when the model signalled it could not ground an answer. */
 export function isInsufficientContext(text: string): boolean {
   return text.trim().toUpperCase().includes(INSUFFICIENT_CONTEXT_SENTINEL);

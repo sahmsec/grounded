@@ -28,6 +28,22 @@ const CAPABILITIES =
  */
 const ABOUT_THE_ASSISTANT = /^(are|r|is)\s+(you|u|this)\b/;
 
+/**
+ * Greetings and thanks in Bangla. Latin-script transliterations are covered by
+ * the patterns above; these are the native-script forms, matched before
+ * normalisation strips them.
+ */
+const BANGLA_GREETING = /(হাই|হ্যালো|হেলো|সালাম|আসসালাম|শুভ\s*(সকাল|দুপুর|বিকাল|সন্ধ্যা)|কেমন\s*আছ)/;
+const BANGLA_THANKS = /(ধন্যবাদ|থ্যাংক|শুকরিয়া)/;
+const BANGLA_FAREWELL = /(বিদায়|আল্লাহ\s*হাফেজ|খোদা\s*হাফেজ)/;
+
+/** True when the text is written mainly in Bengali script. */
+export function isBengaliScript(text: string): boolean {
+  const bengali = text.match(/[ঀ-৿]/g)?.length ?? 0;
+  const letters = text.match(/[\p{L}]/gu)?.length ?? 0;
+  return letters > 0 && bengali / letters > 0.4;
+}
+
 function normalise(text: string): string {
   return text
     .toLowerCase()
@@ -37,6 +53,14 @@ function normalise(text: string): string {
 }
 
 export function classifyIntent(raw: string): Intent {
+  // Bengali script survives none of the Latin patterns, so it is checked
+  // against the raw text before normalisation.
+  if (raw.length <= 60) {
+    if (BANGLA_THANKS.test(raw)) return 'thanks';
+    if (BANGLA_FAREWELL.test(raw)) return 'farewell';
+    if (BANGLA_GREETING.test(raw)) return 'greeting';
+  }
+
   const text = normalise(raw);
   if (text.length === 0) return 'question';
 
@@ -65,7 +89,9 @@ function joinTopics(topics: string[]): string {
 }
 
 /** The reply for a non-question turn, or null when the turn is a question. */
-export function smallTalkReply(intent: Intent, topics: string[]): string | null {
+export function smallTalkReply(intent: Intent, topics: string[], bangla = false): string | null {
+  if (bangla) return banglaSmallTalk(intent, topics);
+
   switch (intent) {
     case 'greeting':
       return (
@@ -81,6 +107,25 @@ export function smallTalkReply(intent: Intent, topics: string[]): string | null 
         'I answer questions using the course material only, and I show you the passage each answer ' +
         `came from. The topics covered are ${joinTopics(topics)}. ` +
         'If something falls outside them I will say so rather than guess.'
+      );
+    default:
+      return null;
+  }
+}
+
+function banglaSmallTalk(intent: Intent, topics: string[]): string | null {
+  const list = joinTopics(topics);
+  switch (intent) {
+    case 'greeting':
+      return `আসসালামু আলাইকুম। আমি কোর্স ম্যাটেরিয়াল থেকে প্রশ্নের উত্তর দিতে পারি — ${list}। কী জানতে চান?`;
+    case 'thanks':
+      return 'আপনাকে স্বাগতম। কোর্স ম্যাটেরিয়াল সম্পর্কিত আরও কিছু জানতে চাইলে জিজ্ঞাসা করুন।';
+    case 'farewell':
+      return 'বিদায়। কোর্স ম্যাটেরিয়াল নিয়ে কিছু জানার হলে আবার আসবেন।';
+    case 'capabilities':
+      return (
+        'আমি শুধু কোর্স ম্যাটেরিয়াল ব্যবহার করে উত্তর দিই, এবং প্রতিটি উত্তরের সূত্র দেখাই। ' +
+        `যে বিষয়গুলো অন্তর্ভুক্ত: ${list}। এর বাইরের কিছু হলে অনুমান না করে সরাসরি জানিয়ে দেব।`
       );
     default:
       return null;

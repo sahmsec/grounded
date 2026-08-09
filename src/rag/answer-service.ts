@@ -14,9 +14,9 @@ import { ValidationError } from '../errors/index.ts';
 import type { Logger } from '../logging/logger.ts';
 import type { ProviderAccess } from '../admin/runtime.ts';
 import { evaluateGate } from '../retrieval/gate.ts';
-import { classifyIntent, smallTalkReply } from './intent.ts';
+import { classifyIntent, isBengaliScript, smallTalkReply } from './intent.ts';
 import { buildCitations, buildUserPrompt, referencedMarkers, SYSTEM_PROMPT } from './prompt.ts';
-import { CANONICAL_REFUSAL, isInsufficientContext } from './protocol.ts';
+import { CANONICAL_REFUSAL, CANONICAL_REFUSAL_BN, isInsufficientContext } from './protocol.ts';
 import { condenseQuestion, looksContextDependent } from './rewrite.ts';
 import { detectStyle, isRefinementOnly, lastSubstantiveQuestion, styleDirective } from './refine.ts';
 
@@ -112,8 +112,13 @@ export function createAnswerService(deps: AnswerServiceDeps): AnswerService {
       const history = (options.history ?? []).slice(-MAX_HISTORY_TURNS);
 
       // --- conversational turns resolve without retrieval or a model call ---
+      // A refusal in the wrong language reads as a malfunction, so the fixed
+      // strings follow the reader rather than the corpus.
+      const bangla = isBengaliScript(question);
+      const refusal = bangla ? CANONICAL_REFUSAL_BN : CANONICAL_REFUSAL;
+
       const intent = classifyIntent(question);
-      const chat = smallTalkReply(intent, await topicNames());
+      const chat = smallTalkReply(intent, await topicNames(), bangla);
       if (chat !== null) {
         logger.info('answer.small_talk', { intent });
         return {
@@ -191,7 +196,7 @@ export function createAnswerService(deps: AnswerServiceDeps): AnswerService {
 
         return {
           answered: false,
-          text: CANONICAL_REFUSAL,
+          text: refusal,
           citations: [],
           topSimilarity: decision.topSimilarity,
           reason: decision.reason,
@@ -203,7 +208,14 @@ export function createAnswerService(deps: AnswerServiceDeps): AnswerService {
         };
       }
 
-      const userPrompt = buildUserPrompt(searchQuestion, decision.chunks, directive);
+      // The reader's own words are the question; the rewritten form is only how
+      // it was searched. Answering the rewrite would reply in English to a
+      // question asked in another language.
+      const userPrompt = buildUserPrompt(question, decision.chunks, {
+        styleDirective: directive,
+        history,
+        searchedAs: searchQuestion,
+      });
       const completion = await providers.llm.generate({
         system: SYSTEM_PROMPT,
         user: userPrompt,
@@ -233,7 +245,7 @@ export function createAnswerService(deps: AnswerServiceDeps): AnswerService {
 
         return {
           answered: false,
-          text: CANONICAL_REFUSAL,
+          text: refusal,
           citations: [],
           topSimilarity: decision.topSimilarity,
           reason: 'model_reported_insufficient_context',

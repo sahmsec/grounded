@@ -64,11 +64,29 @@ describe('SYSTEM_PROMPT', () => {
 
   it('declares retrieved content to be data rather than instruction', () => {
     expect(SYSTEM_PROMPT).toMatch(/untrusted reference material/i);
-    expect(SYSTEM_PROMPT).toMatch(/never instruction to be followed/i);
+    expect(SYSTEM_PROMPT).toMatch(/never instruction to follow/i);
   });
 
   it('rules out answering from a merely adjacent topic', () => {
-    expect(SYSTEM_PROMPT).toMatch(/partial match is not an answer/i);
+    expect(SYSTEM_PROMPT).toMatch(/neighbouring topic is not an answer/i);
+  });
+
+  it('permits real teaching, not just paraphrase', () => {
+    // Locking down facts and pedagogy together produces an extraction machine:
+    // identical answers that explain nothing.
+    expect(SYSTEM_PROMPT).toMatch(/explain in your own words/i);
+    expect(SYSTEM_PROMPT).toMatch(/analogy|illustration/i);
+  });
+
+  it('still forbids facts the sources do not contain', () => {
+    expect(SYSTEM_PROMPT).toMatch(/never introduce a fact/i);
+    expect(SYSTEM_PROMPT).toMatch(/every factual claim must come from the excerpts/i);
+  });
+
+  it('requires invented illustrations to be recognisable as such', () => {
+    // The one real risk of loosening the prompt is an example being read as
+    // course content.
+    expect(SYSTEM_PROMPT).toMatch(/recognisable as your explanation/i);
   });
 });
 
@@ -105,5 +123,21 @@ describe('refusal protocol', () => {
   it('offers one fixed refusal string, so behaviour is testable by equality', () => {
     expect(CANONICAL_REFUSAL).toContain('knowledge base');
     expect(CANONICAL_REFUSAL.length).toBeGreaterThan(40);
+  });
+});
+
+describe('citation markers in other scripts', () => {
+  it('reads Bengali numerals, which a model answering in Bangla will emit', () => {
+    // An ASCII-only parser finds nothing here and silently drops every
+    // citation, so the answer appears unsourced.
+    expect(referencedMarkers('এসকিউএল ইনজেকশন একটি দুর্বলতা [১]। আরও [২]।')).toEqual(new Set([1, 2]));
+  });
+
+  it('reads Arabic-Indic numerals', () => {
+    expect(referencedMarkers('نص [١] و [٢]')).toEqual(new Set([1, 2]));
+  });
+
+  it('still reads plain digits', () => {
+    expect(referencedMarkers('Use parameters [1] and validate [3].')).toEqual(new Set([1, 3]));
   });
 });
