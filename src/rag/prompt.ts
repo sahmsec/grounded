@@ -35,7 +35,12 @@ function neutraliseSourceMarkup(content: string): string {
   return content.replace(/<\/?source\b/gi, (match) => match.replace('<', '‹'));
 }
 
-export function buildUserPrompt(question: string, chunks: RetrievedChunk[]): string {
+export function buildUserPrompt(
+  question: string,
+  chunks: RetrievedChunk[],
+  /** How the reader asked for it to be presented. Shape only, never content. */
+  styleDirective?: string,
+): string {
   const blocks = chunks.map((chunk, index) => {
     const marker = index + 1;
     const attributes = [
@@ -47,13 +52,22 @@ export function buildUserPrompt(question: string, chunks: RetrievedChunk[]): str
     return `<source ${attributes}>\n${neutraliseSourceMarkup(chunk.content)}\n</source>`;
   });
 
-  return [
-    CONTEXT_MARKER,
-    blocks.join('\n\n'),
-    '',
-    QUESTION_MARKER,
-    question.trim(),
-  ].join('\n');
+  const parts = [CONTEXT_MARKER, blocks.join('\n\n'), '', QUESTION_MARKER, question.trim()];
+
+  if (styleDirective) {
+    // Stated last and marked as overriding, because a refinement usually
+    // re-asks an earlier question whose own wording ("in two lines")
+    // contradicts the new request. Without this the model obeys the older
+    // phrasing and the reader's "explain more" changes nothing.
+    parts.push(
+      '',
+      '### HOW TO PRESENT IT',
+      `${styleDirective} This is the reader's latest instruction and overrides any length or ` +
+        'formatting preference expressed in the question above.',
+    );
+  }
+
+  return parts.join('\n');
 }
 
 export function buildCitations(chunks: RetrievedChunk[]): Citation[] {

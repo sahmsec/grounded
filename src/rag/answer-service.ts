@@ -18,6 +18,7 @@ import { classifyIntent, smallTalkReply } from './intent.ts';
 import { buildCitations, buildUserPrompt, referencedMarkers, SYSTEM_PROMPT } from './prompt.ts';
 import { CANONICAL_REFUSAL, isInsufficientContext } from './protocol.ts';
 import { condenseQuestion, looksContextDependent } from './rewrite.ts';
+import { detectStyle, isRefinementOnly, lastSubstantiveQuestion, styleDirective } from './refine.ts';
 
 const MAX_QUESTION_LENGTH = 2000;
 /** Enough to resolve a reference; more just costs tokens and adds noise. */
@@ -128,11 +129,27 @@ export function createAnswerService(deps: AnswerServiceDeps): AnswerService {
         };
       }
 
-      // --- resolve follow-up references before searching --------------------
+      // --- a request about the answer's shape, not its subject --------------
+      // "explain more" and "why so short" score well against the corpus but
+      // are not answerable from it, so the model refuses a question it was
+      // never really asked. Re-answer the earlier question in the shape the
+      // reader wants instead.
+      const style = detectStyle(question);
+      const directive = style ? styleDirective(style) : undefined;
+
       let searchQuestion = question;
       let rewritten: string | null = null;
 
-      if (history.length > 0 && looksContextDependent(question)) {
+      if (isRefinementOnly(question)) {
+        const previous = lastSubstantiveQuestion(history);
+        if (previous !== null) {
+          rewritten = previous;
+          searchQuestion = previous;
+          logger.info('question.refinement', { instruction: question, reanswering: previous, style });
+        }
+      }
+
+      if (rewritten === null && history.length > 0 && looksContextDependent(question)) {
         const condensed = await condenseQuestion(question, history, providers.llm, config.llm.rewriteModel);
         if (condensed !== question) {
           rewritten = condensed;
@@ -186,7 +203,7 @@ export function createAnswerService(deps: AnswerServiceDeps): AnswerService {
         };
       }
 
-      const userPrompt = buildUserPrompt(searchQuestion, decision.chunks);
+      const userPrompt = buildUserPrompt(searchQuestion, decision.chunks, directive);
       const completion = await providers.llm.generate({
         system: SYSTEM_PROMPT,
         user: userPrompt,

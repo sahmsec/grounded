@@ -21,6 +21,13 @@ const FAREWELL = /^(bye|goodbye|see\s*(you|ya)|later|good\s*night)\b/;
 const CAPABILITIES =
   /^(what|which|who|how)\b.*\b(can you (do|help)|do you (do|know|cover)|are you|topics?|subjects?|modules?|help me with)\b|^help$|^what can you do\b/;
 
+/**
+ * Questions about the assistant rather than the subject — "are you working?",
+ * "are you usable now?". Capped at four words by the caller, because "are you
+ * familiar with phishing" is a real question that opens the same way.
+ */
+const ABOUT_THE_ASSISTANT = /^(are|r|is)\s+(you|u|this)\b/;
+
 function normalise(text: string): string {
   return text
     .toLowerCase()
@@ -38,6 +45,7 @@ export function classifyIntent(raw: string): Intent {
   // Capability questions can be longer, and are checked first so that
   // "what topics do you cover" is not mistaken for an ordinary question.
   if (words <= 12 && CAPABILITIES.test(text)) return 'capabilities';
+  if (words <= 4 && ABOUT_THE_ASSISTANT.test(text)) return 'capabilities';
 
   if (words > MAX_SMALL_TALK_WORDS) return 'question';
 
