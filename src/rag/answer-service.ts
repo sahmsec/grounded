@@ -15,7 +15,8 @@ import type { Logger } from '../logging/logger.ts';
 import type { ProviderAccess } from '../admin/runtime.ts';
 import { evaluateGate } from '../retrieval/gate.ts';
 import { classifyIntent, isBengaliScript, smallTalkReply } from './intent.ts';
-import { buildCitations, buildUserPrompt, referencedMarkers, SYSTEM_PROMPT } from './prompt.ts';
+import { buildCitations, buildUserPrompt, referencedMarkers } from './prompt.ts';
+import { mayIncludeGeneralKnowledge, systemPromptFor } from './modes.ts';
 import { CANONICAL_REFUSAL, CANONICAL_REFUSAL_BN, isInsufficientContext } from './protocol.ts';
 import { condenseQuestion, looksContextDependent } from './rewrite.ts';
 import { detectStyle, isRefinementOnly, lastSubstantiveQuestion, styleDirective } from './refine.ts';
@@ -217,7 +218,7 @@ export function createAnswerService(deps: AnswerServiceDeps): AnswerService {
         searchedAs: searchQuestion,
       });
       const completion = await providers.llm.generate({
-        system: SYSTEM_PROMPT,
+        system: systemPromptFor(config.llm.answerMode),
         user: userPrompt,
         maxTokens: config.llm.maxOutputTokens,
         temperature: config.llm.temperature,
@@ -260,6 +261,11 @@ export function createAnswerService(deps: AnswerServiceDeps): AnswerService {
       const used = referencedMarkers(completion.text);
       const citations = used.size > 0 ? allCitations.filter((entry) => used.has(entry.marker)) : allCitations;
 
+      // Surfaced so the interface can be honest about which claims are
+      // traceable — in topic-locked mode an uncited paragraph is the model's
+      // own knowledge, not an oversight.
+      const generalKnowledge = mayIncludeGeneralKnowledge(config.llm.answerMode);
+
       logger.info('answer.generated', {
         topScore: decision.topSimilarity,
         chunksUsed: decision.chunks.length,
@@ -278,6 +284,7 @@ export function createAnswerService(deps: AnswerServiceDeps): AnswerService {
         intent,
         rewrittenQuestion: rewritten,
         refusedWithoutModelCall: false,
+        mayIncludeGeneralKnowledge: generalKnowledge,
         meta,
       };
     },

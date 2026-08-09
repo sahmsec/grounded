@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { buildCitations, buildUserPrompt, referencedMarkers, SYSTEM_PROMPT } from '../../src/rag/prompt.ts';
+import { buildCitations, buildUserPrompt, referencedMarkers } from '../../src/rag/prompt.ts';
+import { mayIncludeGeneralKnowledge, systemPromptFor } from '../../src/rag/modes.ts';
 import { CANONICAL_REFUSAL, INSUFFICIENT_CONTEXT_SENTINEL, isInsufficientContext } from '../../src/rag/protocol.ts';
 import type { RetrievedChunk } from '../../src/domain/types.ts';
 
@@ -57,7 +58,9 @@ describe('buildUserPrompt', () => {
   });
 });
 
-describe('SYSTEM_PROMPT', () => {
+describe('strict mode prompt', () => {
+  const SYSTEM_PROMPT = systemPromptFor('strict');
+
   it('tells the model the exact sentinel to emit', () => {
     expect(SYSTEM_PROMPT).toContain(INSUFFICIENT_CONTEXT_SENTINEL);
   });
@@ -151,5 +154,43 @@ describe('citation markers in other scripts', () => {
 
   it('still reads plain digits', () => {
     expect(referencedMarkers('Use parameters [1] and validate [3].')).toEqual(new Set([1, 3]));
+  });
+});
+
+describe('topic-locked mode prompt', () => {
+  const prompt = systemPromptFor('topic-locked');
+
+  it('keeps the scope limit even though facts are open', () => {
+    // The whole point of the mode: the corpus still decides which topics are
+    // answerable, only the source of facts changes.
+    expect(prompt).toMatch(/THE ONE HARD LIMIT/);
+    expect(prompt).toContain(INSUFFICIENT_CONTEXT_SENTINEL);
+    expect(prompt).toMatch(/being knowledgeable about something is never a reason to answer it here/i);
+  });
+
+  it('allows the model its own knowledge within the topic', () => {
+    expect(prompt).toMatch(/your own knowledge of the topic/i);
+    expect(prompt).toMatch(/CVE identifiers/i);
+  });
+
+  it('keeps the course framing authoritative on disagreement', () => {
+    // Students are assessed on the course position, not the internet's.
+    expect(prompt).toMatch(/never contradict the course material/i);
+  });
+
+  it('demands an admitted gap over a plausible invention', () => {
+    expect(prompt).toMatch(/be accurate or be silent/i);
+    expect(prompt).toMatch(/confidently wrong security detail is worse/i);
+  });
+
+  it('treats an uncited claim as the model’s own rather than a missing source', () => {
+    expect(prompt).toMatch(/carries no marker/i);
+  });
+});
+
+describe('mayIncludeGeneralKnowledge', () => {
+  it('is true only where facts may come from outside the corpus', () => {
+    expect(mayIncludeGeneralKnowledge('strict')).toBe(false);
+    expect(mayIncludeGeneralKnowledge('topic-locked')).toBe(true);
   });
 });

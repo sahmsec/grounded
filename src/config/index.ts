@@ -9,6 +9,7 @@
 
 import { ConfigError } from '../errors/index.ts';
 import { isLogLevel, type LogLevel } from '../logging/logger.ts';
+import { isAnswerMode, type AnswerMode } from '../rag/modes.ts';
 
 export interface QuotaLimits {
   /** Requests per minute. `null` means unmetered on that axis. */
@@ -45,6 +46,11 @@ export interface Config {
      * should not consume the answering model's daily allowance.
      */
     rewriteModel: string;
+    /**
+     * Whether facts must come from the corpus, or the corpus only fixes the
+     * topic. The gate is unaffected either way.
+     */
+    answerMode: AnswerMode;
   };
   embedding: {
     pool: CredentialConfig[];
@@ -233,6 +239,17 @@ function buildEmbeddingPool(env: Env): { pool: CredentialConfig[]; model: string
   };
 }
 
+function readAnswerMode(env: Env): AnswerMode {
+  const raw = str(env, 'ANSWER_MODE', 'strict');
+  if (!isAnswerMode(raw)) {
+    throw new ConfigError(
+      `ANSWER_MODE must be "strict" or "topic-locked", received "${raw}"`,
+      { value: raw },
+    );
+  }
+  return raw;
+}
+
 function buildLlmPool(env: Env): Config['llm'] {
   const providers = list(env, 'LLM_POOL', ['gemini']);
   assertKnownProviders(providers, LLM_PROVIDERS, 'llm');
@@ -247,6 +264,7 @@ function buildLlmPool(env: Env): Config['llm'] {
     maxOutputTokens: int(env, 'MAX_OUTPUT_TOKENS', 1024),
     temperature: num(env, 'TEMPERATURE', 0.2),
     rewriteModel: str(env, 'REWRITE_MODEL', ''),
+    answerMode: readAnswerMode(env),
   };
 }
 

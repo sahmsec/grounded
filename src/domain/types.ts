@@ -107,6 +107,11 @@ export interface AnswerResult {
   rewrittenQuestion: string | null;
   /** True when no model was contacted — the gate resolved it alone. */
   refusedWithoutModelCall: boolean;
+  /**
+   * True when the answering mode permits facts beyond the corpus, so an
+   * uncited claim is the model's own knowledge rather than a missing citation.
+   */
+  mayIncludeGeneralKnowledge?: boolean;
   meta: {
     candidatesConsidered: number;
     chunksUsed: number;

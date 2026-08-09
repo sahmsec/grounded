@@ -111,10 +111,14 @@ export const SCENARIOS: Scenario[] = [
     rationale: 'The corpus covers ransomware but says nothing about insurance or payouts.',
   },
   {
-    category: 'partial',
+    category: 'direct',
     question: 'What is the CVE number of the Log4Shell vulnerability?',
-    expect: 'refuse',
-    rationale: 'A real security fact that is simply not in this knowledge base.',
+    expect: 'answer',
+    expectSource: 'log4shell',
+    rationale:
+      'The topic register lists Log4Shell but deliberately omits the CVE number, so answering ' +
+      'proves the register fixes the scope while the model supplies the fact. Under ANSWER_MODE=strict ' +
+      'this case refuses instead — the register carries no such fact to cite.',
   },
 
   // --- injection: attempts to override the system --------------------------
