@@ -10,7 +10,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadConfig, loadEnvFile, type Config, type Env } from './config/index.ts';
 import { createDb, ping, type Db } from './db/client.ts';
-import { assertEmbeddingDimensions, runMigrations } from './db/migrate.ts';
+import { assertEmbeddingDimensions, assertEmbeddingModel, runMigrations } from './db/migrate.ts';
 import { ChunkRepository, DocumentRepository, createPostgresUsageStore } from './db/repositories.ts';
 import { createIngestionService, type IngestionService } from './ingest/service.ts';
 import { createLogger, type Logger } from './logging/logger.ts';
@@ -73,6 +73,7 @@ export async function createApp(options: CreateAppOptions = {}): Promise<App> {
   }
 
   await assertEmbeddingDimensions(db, config.embedding.dimensions);
+  await assertEmbeddingModel(db, config.embedding.model);
 
   const events: Array<PoolEvent & { at: string }> = [];
   const onEvent = (event: PoolEvent): void => {

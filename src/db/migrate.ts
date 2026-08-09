@@ -117,3 +117,33 @@ export async function assertEmbeddingDimensions(db: Db, expected: number): Promi
     );
   }
 }
+
+/**
+ * Confirms the indexed corpus was built by the embedding model now configured.
+ *
+ * Matching dimensions are not enough. Two different models can both produce
+ * 768-dimension vectors that are completely incomparable, and the failure is
+ * silent: no error, no crash, just similarity scores near zero and a bot that
+ * refuses everything. This turns that into a startup error naming the fix.
+ */
+export async function assertEmbeddingModel(db: Db, expected: string): Promise<void> {
+  const rows = await query<{ embedding_model: string; count: string }>(
+    db,
+    `SELECT embedding_model, count(*)::text AS count
+       FROM document_chunks
+      GROUP BY embedding_model`,
+  );
+
+  if (rows.length === 0) return; // Empty corpus; nothing to disagree with.
+
+  const foreign = rows.filter((row) => row.embedding_model !== expected);
+  if (foreign.length === 0) return;
+
+  const summary = foreign.map((row) => `${row.embedding_model} (${row.count} chunks)`).join(', ');
+  throw new DatabaseError(
+    `The corpus was indexed with ${summary}, but EMBEDDING_POOL is configured for "${expected}". ` +
+      `Those vectors are not comparable, so every question would score near zero and be refused. ` +
+      `Re-index with: npm run seed -- --force`,
+    { expected, found: rows.map((row) => row.embedding_model) },
+  );
+}

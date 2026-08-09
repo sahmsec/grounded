@@ -19,7 +19,10 @@
     "test": "vitest run",
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "models": "node scripts/models.ts",
+    "smoke": "node scripts/smoke.ts",
+    "calibrate": "node scripts/calibrate.ts"
   },
   "dependencies": {
     "@google/genai": "^1.34.0",
