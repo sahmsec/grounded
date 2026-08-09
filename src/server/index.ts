@@ -104,10 +104,30 @@ export function createServer(app: App): http.Server {
         }
 
         if (route === 'POST /ask') {
-          const body = (await readJsonBody(request)) as { question?: unknown };
+          const body = (await readJsonBody(request)) as { question?: unknown; history?: unknown };
           const question = typeof body.question === 'string' ? body.question : '';
 
-          const result = await app.answers.ask(question);
+          // Only well-formed turns are accepted; anything else is dropped
+          // rather than trusted, since history is client-supplied text that
+          // ends up inside a prompt.
+          const history = Array.isArray(body.history)
+            ? body.history
+                .filter(
+                  (turn): turn is { role: string; content: string } =>
+                    typeof turn === 'object' &&
+                    turn !== null &&
+                    typeof (turn as { content?: unknown }).content === 'string' &&
+                    ((turn as { role?: unknown }).role === 'user' ||
+                      (turn as { role?: unknown }).role === 'assistant'),
+                )
+                .slice(-12)
+                .map((turn) => ({
+                  role: turn.role as 'user' | 'assistant',
+                  content: turn.content.slice(0, 4000),
+                }))
+            : [];
+
+          const result = await app.answers.ask(question, { history });
           send(response, 200, result);
           return;
         }

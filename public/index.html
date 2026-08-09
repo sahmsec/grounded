@@ -331,6 +331,9 @@
   let stage = document.getElementById('stage');
   let chatting = false;
 
+  /** Sent with each question so follow-ups like "explain more" resolve. */
+  let history = [];
+
   /* ── theme ───────────────────────────────────────────────────────────── */
   const storedTheme = localStorage.getItem('grounded.theme');
   if (storedTheme === 'light' || storedTheme === 'dark') {
@@ -416,12 +419,21 @@
     if (!result.answered) body.append(el('span', 'flag', 'Not in the course material'));
     body.append(el('div', 'answer', result.text));
 
-    if (result.citations.length > 0) {
+    // Five passages from one document listed five times is noise. Group by
+    // document and show which markers came from it.
+    const grouped = new Map();
+    for (const citation of result.citations) {
+      const existing = grouped.get(citation.documentSlug);
+      if (existing) existing.markers.push(citation.marker);
+      else grouped.set(citation.documentSlug, { ...citation, markers: [citation.marker] });
+    }
+
+    if (grouped.size > 0) {
       const sources = el('div', 'sources');
-      sources.append(el('div', 'sources-head', 'Sources'));
-      for (const citation of result.citations) {
+      sources.append(el('div', 'sources-head', grouped.size === 1 ? 'Source' : 'Sources'));
+      for (const citation of grouped.values()) {
         const item = el('div', 'source');
-        item.append(el('span', 'n', String(citation.marker)));
+        item.append(el('span', 'n', citation.markers.join(', ')));
         item.append(el('span', 'name', citation.documentTitle));
         item.append(el('span', 'cite', citation.source));
         sources.append(item);
@@ -476,9 +488,17 @@
       const response = await fetch('/ask', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ question }),
+        body: JSON.stringify({ question, history }),
       });
       const payload = await response.json();
+
+      if (response.ok) {
+        history.push({ role: 'user', content: question });
+        history.push({ role: 'assistant', content: payload.text });
+        // Only recent turns matter for resolving a reference, and the server
+        // trims too — this just avoids sending a whole transcript every time.
+        history = history.slice(-8);
+      }
       waiting.replaceWith(response.ok
         ? renderReply(payload)
         : renderFailure(payload.message ?? 'The request could not be completed.'));
@@ -507,6 +527,7 @@
 
   reset.addEventListener('click', () => {
     thread.replaceChildren();
+    history = [];
     chatting = false;
     document.body.classList.remove('chatting');
     reset.hidden = true;

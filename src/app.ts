@@ -101,7 +101,7 @@ export async function createApp(options: CreateAppOptions = {}): Promise<App> {
   const documents = new DocumentRepository(db);
   const chunks = new ChunkRepository(db);
 
-  const answers = createAnswerService({ config, chunks, providers, logger });
+  const answers = createAnswerService({ config, chunks, documents, providers, logger });
   const ingestion = createIngestionService({ config, documents, chunks, providers, logger });
 
   logger.info('app.ready', {

@@ -4,7 +4,7 @@ import { CANONICAL_REFUSAL, INSUFFICIENT_CONTEXT_SENTINEL } from '../../src/rag/
 import { ValidationError } from '../../src/errors/index.ts';
 import { silentLogger } from '../../src/logging/logger.ts';
 import type { Config } from '../../src/config/index.ts';
-import type { ChunkRepository } from '../../src/db/repositories.ts';
+import type { ChunkRepository, DocumentRepository } from '../../src/db/repositories.ts';
 import type { RetrievedChunk } from '../../src/domain/types.ts';
 import type { LlmRequest, PooledEmbeddings, PooledLlm } from '../../src/providers/index.ts';
 
@@ -37,11 +37,12 @@ function build(options: { candidates: RetrievedChunk[]; answer?: string }) {
   }));
 
   const chunks = { search: vi.fn(async () => options.candidates) } as unknown as ChunkRepository;
+  const documents = { listTopics: vi.fn(async () => []) } as unknown as DocumentRepository;
   const embeddings = { embedQuery: vi.fn(async () => [0.1, 0.2]) } as unknown as PooledEmbeddings;
   const llm = { generate } as unknown as PooledLlm;
 
   const providers = { llm, embeddings } as { llm: PooledLlm; embeddings: PooledEmbeddings };
-  const service = createAnswerService({ config: CONFIG, chunks, providers, logger: silentLogger });
+  const service = createAnswerService({ config: CONFIG, chunks, documents, providers, logger: silentLogger });
   return { service, generate, chunks, embeddings };
 }
 

@@ -71,6 +71,12 @@ export const REFUSAL_REASONS = [
 
 export type RefusalReason = (typeof REFUSAL_REASONS)[number];
 
+/** One prior message in the conversation, oldest first. */
+export interface ConversationTurn {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 export interface GateDecision {
   /** True when the question may proceed to the model. */
   admitted: boolean;
@@ -83,12 +89,22 @@ export interface GateDecision {
   explanation: string;
 }
 
+/** Why the assistant responded the way it did. */
+export type AnswerOutcome = RefusalReason | 'admitted' | 'small_talk';
+
 export interface AnswerResult {
   answered: boolean;
   text: string;
   citations: Citation[];
   topSimilarity: number | null;
-  reason: RefusalReason | 'admitted';
+  reason: AnswerOutcome;
+  /** How the turn was read: a knowledge question, a greeting, and so on. */
+  intent: string;
+  /**
+   * The standalone form of a follow-up, when one was needed. Present so an
+   * operator can see what was actually searched for rather than guessing.
+   */
+  rewrittenQuestion: string | null;
   /** True when no model was contacted — the gate resolved it alone. */
   refusedWithoutModelCall: boolean;
   meta: {

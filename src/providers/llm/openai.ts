@@ -31,7 +31,7 @@ export function createOpenAiLlm(apiKey: string, model: string): LlmProvider {
             authorization: `Bearer ${apiKey}`,
           },
           body: JSON.stringify({
-            model,
+            model: request.model ?? model,
             messages: [
               { role: 'system', content: request.system },
               { role: 'user', content: request.user },

@@ -39,6 +39,12 @@ export interface Config {
     models: Record<string, string>;
     maxOutputTokens: number;
     temperature: number;
+    /**
+     * Model used to turn follow-ups into standalone questions. Deliberately a
+     * small one: free-tier quota is counted per model, so a mechanical rewrite
+     * should not consume the answering model's daily allowance.
+     */
+    rewriteModel: string;
   };
   embedding: {
     pool: CredentialConfig[];
@@ -240,6 +246,7 @@ function buildLlmPool(env: Env): Config['llm'] {
     },
     maxOutputTokens: int(env, 'MAX_OUTPUT_TOKENS', 1024),
     temperature: num(env, 'TEMPERATURE', 0.2),
+    rewriteModel: str(env, 'REWRITE_MODEL', ''),
   };
 }
 

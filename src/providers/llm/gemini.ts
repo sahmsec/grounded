@@ -28,23 +28,24 @@ function thinkingConfigFor(model: string): Record<string, unknown> {
 
 export function createGeminiLlm(apiKey: string, model: string): LlmProvider {
   const client = new GoogleGenAI({ apiKey });
-  const thinkingConfig = thinkingConfigFor(model);
 
   return {
     name: 'gemini',
     model,
 
     async generate(request: LlmRequest): Promise<LlmResponse> {
+      const effectiveModel = request.model ?? model;
+
       let response;
       try {
         response = await client.models.generateContent({
-          model,
+          model: effectiveModel,
           contents: request.user,
           config: {
             systemInstruction: request.system,
             maxOutputTokens: request.maxTokens,
             temperature: request.temperature,
-            thinkingConfig,
+            thinkingConfig: thinkingConfigFor(effectiveModel),
           },
         });
       } catch (error) {
@@ -55,9 +56,12 @@ export function createGeminiLlm(apiKey: string, model: string): LlmProvider {
       if (typeof text !== 'string' || text.trim().length === 0) {
         // Usually a safety block or an exhausted output budget. Either way the
         // caller cannot ground an answer on it, so treat it as a real failure.
-        throw new ProviderError('gemini', 'server', 'Gemini returned an empty completion', {
-          cause: { finishReason: response.candidates?.[0]?.finishReason },
-        });
+        throw new ProviderError(
+          'gemini',
+          'server',
+          `Gemini returned an empty completion for ${effectiveModel}`,
+          { cause: { finishReason: response.candidates?.[0]?.finishReason } },
+        );
       }
 
       const usage = response.usageMetadata;
