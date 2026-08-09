@@ -83,6 +83,11 @@ export function createServer(app: App): http.Server {
           return;
         }
 
+        if (route === 'GET /modules') {
+          send(response, 200, { modules: await app.documents.listTopics() });
+          return;
+        }
+
         if (route === 'GET /admin/providers') {
           const pools = app.poolStatus();
           send(response, 200, {
