@@ -40,7 +40,8 @@ function build(options: { candidates: RetrievedChunk[]; answer?: string }) {
   const embeddings = { embedQuery: vi.fn(async () => [0.1, 0.2]) } as unknown as PooledEmbeddings;
   const llm = { generate } as unknown as PooledLlm;
 
-  const service = createAnswerService({ config: CONFIG, chunks, embeddings, llm, logger: silentLogger });
+  const providers = { llm, embeddings } as { llm: PooledLlm; embeddings: PooledEmbeddings };
+  const service = createAnswerService({ config: CONFIG, chunks, providers, logger: silentLogger });
   return { service, generate, chunks, embeddings };
 }
 

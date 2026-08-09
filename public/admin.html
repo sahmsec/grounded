@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>grounded — admin</title>
+<style>
+  :root {
+    --bg:#F7F8FA; --card:#FFFFFF; --sunk:#F0F2F6;
+    --ink:#1A1B1F; --ink-2:#5A5D68; --ink-3:#8B8F9B;
+    --line:#E4E6EC; --line-2:#D2D5DE;
+    --accent:#2B62D9; --accent-ink:#FFFFFF; --accent-soft:#EAF0FD;
+    --ok:#0F7A55; --ok-soft:#E4F3EC;
+    --warn:#9A6206; --warn-soft:#FBF0DC;
+    --bad:#B3261E; --bad-soft:#FAE7E6;
+    --sans: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+    --mono: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:#0F1014; --card:#17181E; --sunk:#1D1F26;
+      --ink:#E9EAF0; --ink-2:#A3A7B4; --ink-3:#767B89;
+      --line:#262932; --line-2:#343846;
+      --accent:#7E9CF5; --accent-ink:#0F1014; --accent-soft:#1A2340;
+      --ok:#43C795; --ok-soft:#0F2C22;
+      --warn:#DFA84C; --warn-soft:#2E2411;
+      --bad:#EC6A70; --bad-soft:#331618;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin:0; background:var(--bg); color:var(--ink); font-family:var(--sans);
+    font-size:14.5px; line-height:1.6; -webkit-font-smoothing:antialiased;
+  }
+  button, input, select { font:inherit; }
+
+  header {
+    background:var(--card); border-bottom:1px solid var(--line);
+    padding:0 24px; height:60px; display:flex; align-items:center; gap:12px;
+    position:sticky; top:0; z-index:5;
+  }
+  header b { font-size:16px; font-weight:650; letter-spacing:-.012em; }
+  header .sep { color:var(--ink-3); }
+  header .grow { margin-left:auto; }
+  header a { color:var(--ink-2); text-decoration:none; font-size:13.5px; }
+  header a:hover { color:var(--accent); }
+
+  .wrap { max-width:900px; margin:0 auto; padding:28px 24px 80px; }
+
+  .panel {
+    background:var(--card); border:1px solid var(--line); border-radius:12px;
+    margin-bottom:20px; overflow:hidden;
+  }
+  .panel > h2 {
+    margin:0; padding:15px 20px; font-size:14px; font-weight:650;
+    border-bottom:1px solid var(--line); display:flex; align-items:center; gap:10px;
+  }
+  .panel > h2 span { font-weight:400; color:var(--ink-3); font-size:13px; }
+  .panel .inner { padding:18px 20px; }
+
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; }
+  label { display:block; font-size:12.5px; font-weight:600; color:var(--ink-2); margin-bottom:6px; }
+  select, input[type=text], input[type=password] {
+    width:100%; padding:9px 11px; border:1px solid var(--line-2); border-radius:8px;
+    background:var(--bg); color:var(--ink);
+  }
+  select:focus, input:focus { outline:2px solid var(--accent); outline-offset:-1px; border-color:transparent; }
+  .hint { font-size:12px; color:var(--ink-3); margin-top:6px; }
+
+  .btn {
+    border:0; border-radius:8px; padding:9px 16px; cursor:pointer;
+    background:var(--accent); color:var(--accent-ink); font-weight:560;
+  }
+  .btn:disabled { opacity:.45; cursor:default; }
+  .btn.ghost { background:transparent; color:var(--ink-2); border:1px solid var(--line-2); }
+  .btn.ghost:hover { color:var(--ink); border-color:var(--ink-3); }
+  .btn.danger { background:transparent; color:var(--bad); border:1px solid currentColor; }
+  .btn.small { padding:5px 10px; font-size:12.5px; }
+  .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .row.end { justify-content:flex-end; }
+
+  table { width:100%; border-collapse:collapse; }
+  th { text-align:left; font-size:11.5px; text-transform:uppercase; letter-spacing:.07em;
+       color:var(--ink-3); font-weight:600; padding:0 14px 9px; }
+  td { padding:11px 14px; border-top:1px solid var(--line); vertical-align:middle; }
+  td.mono, .mono { font-family:var(--mono); font-size:12.5px; }
+
+  .tag {
+    font-size:11px; font-weight:650; letter-spacing:.05em; text-transform:uppercase;
+    padding:3px 9px; border-radius:999px; background:var(--sunk); color:var(--ink-3);
+  }
+  .tag.ok { background:var(--ok-soft); color:var(--ok); }
+  .tag.warn { background:var(--warn-soft); color:var(--warn); }
+  .tag.bad { background:var(--bad-soft); color:var(--bad); }
+
+  .bar { height:5px; background:var(--sunk); border-radius:3px; overflow:hidden; width:120px; }
+  .bar i { display:block; height:100%; background:var(--ok); }
+  .bar i.warn { background:var(--warn); }
+  .bar i.bad { background:var(--bad); }
+
+  .banner {
+    padding:12px 16px; border-radius:9px; margin-bottom:16px; font-size:13.5px;
+    display:flex; gap:10px; align-items:flex-start;
+  }
+  .banner.info { background:var(--accent-soft); color:var(--ink); }
+  .banner.warn { background:var(--warn-soft); color:var(--warn); }
+  .banner.bad  { background:var(--bad-soft); color:var(--bad); }
+  .banner.ok   { background:var(--ok-soft); color:var(--ok); }
+  .banner b { font-weight:650; }
+
+  .gate { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  .empty { color:var(--ink-3); font-size:13.5px; padding:6px 0; }
+
+  /* login */
+  .login { max-width:420px; margin:14vh auto; }
+  .login .panel .inner { padding:24px; }
+  .login h1 { margin:0 0 6px; font-size:20px; font-weight:650; }
+  .login p { margin:0 0 18px; color:var(--ink-2); font-size:13.5px; }
+  [hidden] { display:none !important; }
+</style>
+</head>
+<body>
+
+<div id="login" class="login" hidden>
+  <div class="panel">
+    <div class="inner">
+      <h1>Admin sign-in</h1>
+      <p>Enter the admin token from your <span class="mono">.env</span> file.</p>
+      <label for="token">Admin token</label>
+      <input type="password" id="token" autocomplete="current-password" placeholder="ADMIN_TOKEN">
+      <div id="login-error" class="banner bad" style="margin:14px 0 0" hidden></div>
+      <div class="row end" style="margin-top:16px">
+        <button class="btn" id="sign-in">Sign in</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="app" hidden>
+  <header>
+    <b>grounded</b><span class="sep">/</span><span>Admin</span>
+    <span class="grow"></span>
+    <a href="/">Open chat</a>
+    <button class="btn ghost small" id="sign-out">Sign out</button>
+  </header>
+
+  <div class="wrap">
+    <div id="notice"></div>
+
+    <!-- ACTIVE MODELS -->
+    <section class="panel">
+      <h2>Models <span>what answers questions, and what indexes the material</span></h2>
+      <div class="inner">
+        <div class="grid">
+          <div>
+            <label for="llm-provider">Answer provider</label>
+            <select id="llm-provider"></select>
+          </div>
+          <div>
+            <label for="llm-model">Answer model</label>
+            <select id="llm-model"></select>
+            <div class="hint" id="llm-hint">Listed live from your key.</div>
+          </div>
+        </div>
+
+        <div class="grid" style="margin-top:18px">
+          <div>
+            <label for="emb-provider">Embedding provider</label>
+            <select id="emb-provider"></select>
+          </div>
+          <div>
+            <label for="emb-model">Embedding model</label>
+            <select id="emb-model"></select>
+            <div class="hint">Changing this makes every stored vector unusable until you re-index.</div>
+          </div>
+        </div>
+
+        <div class="row end" style="margin-top:18px">
+          <span class="hint" id="save-state" style="margin-right:auto"></span>
+          <button class="btn" id="save">Save changes</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- KEYS -->
+    <section class="panel">
+      <h2>API keys <span>stored encrypted, never shown again</span></h2>
+      <div class="inner">
+        <div class="grid">
+          <div>
+            <label for="new-provider">Provider</label>
+            <select id="new-provider"></select>
+          </div>
+          <div>
+            <label for="new-label">Name</label>
+            <input type="text" id="new-label" placeholder="e.g. free tier 2">
+          </div>
+          <div>
+            <label for="new-secret">API key</label>
+            <input type="password" id="new-secret" placeholder="Paste the key">
+          </div>
+        </div>
+        <div class="row end" style="margin-top:14px">
+          <button class="btn" id="add-key">Add key</button>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr><th>Name</th><th>Provider</th><th>Key</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody id="keys"></tbody>
+      </table>
+      <div class="inner" id="keys-empty" hidden>
+        <div class="empty">No keys yet. Add one above — rotation starts as soon as there are two.</div>
+      </div>
+    </section>
+
+    <!-- USAGE -->
+    <section class="panel">
+      <h2>Usage <span>live quota per key</span></h2>
+      <table>
+        <thead>
+          <tr><th>Key</th><th>Pool</th><th>State</th><th>This minute</th><th>Today</th></tr>
+        </thead>
+        <tbody id="usage"></tbody>
+      </table>
+    </section>
+
+    <!-- CORPUS -->
+    <section class="panel">
+      <h2>Course material</h2>
+      <div class="inner">
+        <div class="gate" id="corpus"></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  let token = sessionStorage.getItem('grounded.admin') ?? '';
+  let state = null;
+  const modelCache = new Map();
+
+  const PROVIDERS = [
+    { id: 'gemini', label: 'Google Gemini' },
+    { id: 'openai', label: 'OpenAI' },
+    { id: 'stub', label: 'Offline (testing)' },
+  ];
+  const EMBED_PROVIDERS = [
+    { id: 'gemini', label: 'Google Gemini' },
+    { id: 'openai', label: 'OpenAI' },
+    { id: 'deterministic', label: 'Offline (testing)' },
+  ];
+
+  async function api(path, options = {}) {
+    const response = await fetch(path, {
+      ...options,
+      headers: { 'content-type': 'application/json', 'x-admin-token': token, ...(options.headers ?? {}) },
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw Object.assign(new Error(payload.message ?? response.statusText), { payload });
+    return payload;
+  }
+
+  function notice(kind, message) {
+    const box = $('notice');
+    box.replaceChildren();
+    if (!message) return;
+    const div = document.createElement('div');
+    div.className = `banner ${kind}`;
+    div.textContent = message;
+    box.append(div);
+  }
+
+  function fillSelect(select, options, selected) {
+    select.replaceChildren();
+    for (const option of options) {
+      const node = document.createElement('option');
+      node.value = option.id ?? option;
+      node.textContent = option.label ?? option.id ?? option;
+      if (node.value === selected) node.selected = true;
+      select.append(node);
+    }
+  }
+
+  async function loadModels(provider, kind, select, selected) {
+    const key = `${provider}:${kind}`;
+    if (!modelCache.has(key)) {
+      try {
+        const { models, note } = await api(`/admin/models?provider=${encodeURIComponent(provider)}`);
+        modelCache.set(key, { models: models.filter((m) => m.kinds.includes(kind)), note });
+      } catch (error) {
+        modelCache.set(key, { models: [], note: error.message });
+      }
+    }
+    const { models, note } = modelCache.get(key);
+    fillSelect(select, models.length ? models.map((m) => ({ id: m.id, label: m.id })) : [{ id: selected, label: selected }], selected);
+    if (kind === 'generation') $('llm-hint').textContent = note ?? `${models.length} models available to this key.`;
+  }
+
+  function renderKeys() {
+    const body = $('keys');
+    body.replaceChildren();
+    $('keys-empty').hidden = state.credentials.length > 0;
+
+    for (const credential of state.credentials) {
+      const tr = document.createElement('tr');
+
+      const name = document.createElement('td');
+      name.textContent = credential.label;
+      tr.append(name);
+
+      const provider = document.createElement('td');
+      provider.textContent = credential.provider;
+      tr.append(provider);
+
+      const hint = document.createElement('td');
+      hint.className = 'mono';
+      hint.textContent = `••••${credential.hint}`;
+      tr.append(hint);
+
+      const status = document.createElement('td');
+      const tag = document.createElement('span');
+      tag.className = `tag ${credential.enabled ? 'ok' : ''}`;
+      tag.textContent = credential.enabled ? 'Active' : 'Paused';
+      status.append(tag);
+      tr.append(status);
+
+      const actions = document.createElement('td');
+      actions.className = 'row end';
+      const toggle = document.createElement('button');
+      toggle.className = 'btn ghost small';
+      toggle.textContent = credential.enabled ? 'Pause' : 'Resume';
+      toggle.onclick = async () => {
+        await api(`/admin/credentials/${credential.id}/toggle`, {
+          method: 'POST', body: JSON.stringify({ enabled: !credential.enabled }),
+        });
+        await refresh();
+      };
+      const remove = document.createElement('button');
+      remove.className = 'btn danger small';
+      remove.textContent = 'Delete';
+      remove.onclick = async () => {
+        if (!confirm(`Delete "${credential.label}"? This cannot be undone.`)) return;
+        await api(`/admin/credentials/${credential.id}`, { method: 'DELETE' });
+        modelCache.clear();
+        await refresh();
+      };
+      actions.append(toggle, remove);
+      tr.append(actions);
+
+      body.append(tr);
+    }
+  }
+
+  function meter(used, limit) {
+    const cell = document.createElement('td');
+    if (limit === null) { cell.textContent = `${used} / unlimited`; return cell; }
+    const ratio = Math.min(1, used / limit);
+    const wrap = document.createElement('div');
+    wrap.className = 'row';
+    const bar = document.createElement('div');
+    bar.className = 'bar';
+    const fill = document.createElement('i');
+    fill.style.width = `${ratio * 100}%`;
+    if (ratio >= 1) fill.className = 'bad'; else if (ratio >= 0.8) fill.className = 'warn';
+    bar.append(fill);
+    const text = document.createElement('span');
+    text.className = 'mono';
+    text.textContent = `${used}/${limit}`;
+    wrap.append(bar, text);
+    cell.append(wrap);
+    return cell;
+  }
+
+  function renderUsage() {
+    const body = $('usage');
+    body.replaceChildren();
+
+    for (const [poolName, pool] of Object.entries(state.pools)) {
+      for (const credential of pool.credentials) {
+        const tr = document.createElement('tr');
+
+        const id = document.createElement('td');
+        id.className = 'mono';
+        id.textContent = credential.credentialId;
+        tr.append(id);
+
+        const where = document.createElement('td');
+        where.textContent = poolName;
+        tr.append(where);
+
+        const status = document.createElement('td');
+        const tag = document.createElement('span');
+        const map = { healthy: 'ok', cooling: 'warn', dead: 'bad' };
+        tag.className = `tag ${map[credential.state] ?? ''}`;
+        tag.textContent = credential.state;
+        status.append(tag);
+        if (credential.lastError) status.title = credential.lastError;
+        tr.append(status);
+
+        tr.append(meter(credential.quota.requestsThisMinute, credential.quota.limits.rpm));
+        tr.append(meter(credential.quota.requestsToday, credential.quota.limits.rpd));
+
+        body.append(tr);
+      }
+    }
+  }
+
+  function renderCorpus() {
+    const box = $('corpus');
+    box.replaceChildren();
+    const facts = [
+      `${state.corpus.documents} topics`,
+      `${state.corpus.chunks} passages`,
+      `indexed with ${state.corpus.embeddingModel}`,
+      `answers need a match of ${state.gate.minTopSimilarity}`,
+    ];
+    for (const fact of facts) {
+      const tag = document.createElement('span');
+      tag.className = 'tag';
+      tag.textContent = fact;
+      box.append(tag);
+    }
+    if (state.corpus.embeddingModel !== state.settings.embeddingModel) {
+      notice('warn',
+        `The material was indexed with ${state.corpus.embeddingModel} but ${state.settings.embeddingModel} is selected. ` +
+        'Re-index with: npm run seed -- --force');
+    }
+  }
+
+  async function refresh() {
+    state = await api('/admin/state');
+
+    fillSelect($('llm-provider'), PROVIDERS, state.settings.llmProvider);
+    fillSelect($('emb-provider'), EMBED_PROVIDERS, state.settings.embeddingProvider);
+    fillSelect($('new-provider'), PROVIDERS, state.settings.llmProvider);
+
+    await loadModels(state.settings.llmProvider, 'generation', $('llm-model'), state.settings.llmModel);
+    await loadModels(state.settings.embeddingProvider, 'embedding', $('emb-model'), state.settings.embeddingModel);
+
+    renderKeys();
+    renderUsage();
+    renderCorpus();
+  }
+
+  $('llm-provider').onchange = (event) =>
+    loadModels(event.target.value, 'generation', $('llm-model'), '');
+  $('emb-provider').onchange = (event) =>
+    loadModels(event.target.value, 'embedding', $('emb-model'), '');
+
+  $('save').onclick = async () => {
+    $('save').disabled = true;
+    $('save-state').textContent = 'Saving…';
+    try {
+      const result = await api('/admin/settings', {
+        method: 'PUT',
+        body: JSON.stringify({
+          llmProvider: $('llm-provider').value,
+          llmModel: $('llm-model').value,
+          embeddingProvider: $('emb-provider').value,
+          embeddingModel: $('emb-model').value,
+        }),
+      });
+      await refresh();
+      $('save-state').textContent = 'Saved — live now, no restart needed.';
+      if (result.reindexRequired) {
+        notice('warn', 'Embedding model changed. Existing passages cannot be searched until you re-index: npm run seed -- --force');
+      } else {
+        notice('ok', 'Models updated.');
+      }
+    } catch (error) {
+      notice('bad', error.message);
+      $('save-state').textContent = '';
+    } finally {
+      $('save').disabled = false;
+    }
+  };
+
+  $('add-key').onclick = async () => {
+    const secret = $('new-secret').value.trim();
+    if (!secret) { notice('bad', 'Paste an API key first.'); return; }
+    $('add-key').disabled = true;
+    try {
+      await api('/admin/credentials', {
+        method: 'POST',
+        body: JSON.stringify({
+          provider: $('new-provider').value,
+          label: $('new-label').value,
+          secret,
+        }),
+      });
+      $('new-secret').value = '';
+      $('new-label').value = '';
+      modelCache.clear();
+      await refresh();
+      notice('ok', 'Key added and in rotation.');
+    } catch (error) {
+      notice('bad', error.message);
+    } finally {
+      $('add-key').disabled = false;
+    }
+  };
+
+  async function signIn(candidate) {
+    token = candidate;
+    try {
+      await api('/admin/state');
+      sessionStorage.setItem('grounded.admin', token);
+      $('login').hidden = true;
+      $('app').hidden = false;
+      await refresh();
+    } catch (error) {
+      token = '';
+      sessionStorage.removeItem('grounded.admin');
+      $('login').hidden = false;
+      $('app').hidden = true;
+      const box = $('login-error');
+      box.textContent = error.message;
+      box.hidden = false;
+    }
+  }
+
+  $('sign-in').onclick = () => signIn($('token').value.trim());
+  $('token').addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') signIn($('token').value.trim());
+  });
+  $('sign-out').onclick = () => {
+    sessionStorage.removeItem('grounded.admin');
+    location.reload();
+  };
+
+  if (token) signIn(token); else $('login').hidden = false;
+})();
+</script>
+</body>
+</html>

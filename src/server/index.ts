@@ -13,6 +13,7 @@ import { randomUUID } from 'node:crypto';
 import { createApp, type App } from '../app.ts';
 import { toAppError } from '../errors/index.ts';
 import type { Logger } from '../logging/logger.ts';
+import { handleAdmin } from './admin-routes.ts';
 
 const MAX_BODY_BYTES = 64 * 1024;
 const PUBLIC_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'public');
@@ -88,13 +89,18 @@ export function createServer(app: App): http.Server {
           return;
         }
 
-        if (route === 'GET /admin/providers') {
-          const pools = app.poolStatus();
-          send(response, 200, {
-            pools,
-            recentEvents: app.recentEvents(),
+        if (route === 'GET /admin' || route === 'GET /admin/') {
+          const html = await readFile(path.join(PUBLIC_DIR, 'admin.html'));
+          response.writeHead(200, {
+            'content-type': 'text/html; charset=utf-8',
+            'content-length': html.byteLength,
           });
+          response.end(html);
           return;
+        }
+
+        if (url.pathname.startsWith('/admin/')) {
+          if (await handleAdmin(app, request, response, route, url, logger)) return;
         }
 
         if (route === 'POST /ask') {

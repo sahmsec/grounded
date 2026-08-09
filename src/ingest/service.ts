@@ -5,7 +5,7 @@ import type { ChunkRepository, DocumentRepository, EmbeddedChunk } from '../db/r
 import type { DocumentInput } from '../domain/types.ts';
 import { ValidationError } from '../errors/index.ts';
 import type { Logger } from '../logging/logger.ts';
-import type { PooledEmbeddings } from '../providers/index.ts';
+import type { ProviderAccess } from '../admin/runtime.ts';
 import { chunkText } from './chunker.ts';
 
 export interface IngestResult {
@@ -23,12 +23,12 @@ export interface IngestionDeps {
   config: Config;
   documents: DocumentRepository;
   chunks: ChunkRepository;
-  embeddings: PooledEmbeddings;
+  providers: ProviderAccess;
   logger: Logger;
 }
 
 export function createIngestionService(deps: IngestionDeps): IngestionService {
-  const { config, documents, chunks, embeddings, logger } = deps;
+  const { config, documents, chunks, providers, logger } = deps;
 
   async function ingest(input: DocumentInput): Promise<IngestResult> {
     if (input.content.trim().length === 0) {
@@ -50,14 +50,14 @@ export function createIngestionService(deps: IngestionDeps): IngestionService {
     // on their own — a chunk that only says "Use parameterised queries" is
     // otherwise almost impossible to match to a question about SQL injection.
     const texts = pieces.map((piece) => `${input.title}\n\n${piece.content}`);
-    const vectors = await embeddings.embedDocuments(texts);
+    const vectors = await providers.embeddings.embedDocuments(texts);
 
     const embedded: EmbeddedChunk[] = pieces.map((piece, index) => ({
       ...piece,
       embedding: vectors[index]!,
     }));
 
-    const written = await chunks.replaceForDocument(id, embedded, embeddings.model);
+    const written = await chunks.replaceForDocument(id, embedded, providers.embeddings.model);
     logger.info('ingest.indexed', { slug: input.slug, chunks: written });
 
     return { slug: input.slug, status: 'indexed', chunks: written };

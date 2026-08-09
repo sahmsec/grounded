@@ -14,14 +14,10 @@ import { assertEmbeddingDimensions, assertEmbeddingModel, runMigrations } from '
 import { ChunkRepository, DocumentRepository, createPostgresUsageStore } from './db/repositories.ts';
 import { createIngestionService, type IngestionService } from './ingest/service.ts';
 import { createLogger, type Logger } from './logging/logger.ts';
-import {
-  createPooledEmbeddings,
-  createPooledLlm,
-  type PooledEmbeddings,
-  type PooledLlm,
-  type PoolEvent,
-  type PoolStatus,
-} from './providers/index.ts';
+import { type PoolEvent, type PoolStatus } from './providers/index.ts';
+import { createCipher } from './admin/crypto.ts';
+import { AdminStore } from './admin/store.ts';
+import { createProviderRuntime, createStaticRuntime, type ProviderRuntime } from './admin/runtime.ts';
 import { createAnswerService, type AnswerService } from './rag/answer-service.ts';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -37,8 +33,8 @@ export interface App {
   db: Db;
   documents: DocumentRepository;
   chunks: ChunkRepository;
-  embeddings: PooledEmbeddings;
-  llm: PooledLlm;
+  providers: ProviderRuntime;
+  admin: AdminStore | null;
   answers: AnswerService;
   ingestion: IngestionService;
   /** Most recent first. Gives an operator the story, not just the state. */
@@ -84,21 +80,33 @@ export async function createApp(options: CreateAppOptions = {}): Promise<App> {
   const usageStore = createPostgresUsageStore(db);
   const poolDeps = { logger, usageStore, onEvent };
 
-  const embeddings = createPooledEmbeddings(config, poolDeps);
-  const llm = createPooledLlm(config, poolDeps);
+  // The admin store needs a master key. Without one the app still runs
+  // entirely from .env — the panel is simply unavailable, rather than the
+  // whole service refusing to start over an optional feature.
+  let admin: AdminStore | null = null;
+  try {
+    admin = new AdminStore(db, createCipher(process.env.ADMIN_MASTER_KEY));
+    await admin.importFromEnv(config);
+  } catch (error) {
+    logger.warn('admin.disabled', {
+      reason: error instanceof Error ? error.message : String(error),
+    });
+    admin = null;
+  }
 
-  await Promise.all([embeddings.hydrate(), llm.hydrate()]);
+  const providers = admin
+    ? await createProviderRuntime({ baseConfig: config, store: admin, deps: poolDeps, logger })
+    : await createStaticRuntime(config, poolDeps);
 
   const documents = new DocumentRepository(db);
   const chunks = new ChunkRepository(db);
 
-  const answers = createAnswerService({ config, chunks, embeddings, llm, logger });
-  const ingestion = createIngestionService({ config, documents, chunks, embeddings, logger });
+  const answers = createAnswerService({ config, chunks, providers, logger });
+  const ingestion = createIngestionService({ config, documents, chunks, providers, logger });
 
   logger.info('app.ready', {
-    llmPool: config.llm.pool.map((credential) => credential.id),
-    embeddingPool: config.embedding.pool.map((credential) => credential.id),
-    embeddingModel: config.embedding.model,
+    adminPanel: admin ? 'enabled' : 'disabled (no ADMIN_MASTER_KEY)',
+    embeddingModel: providers.embeddings.model,
     dimensions: config.embedding.dimensions,
     gate: config.gate,
   });
@@ -109,12 +117,12 @@ export async function createApp(options: CreateAppOptions = {}): Promise<App> {
     db,
     documents,
     chunks,
-    embeddings,
-    llm,
+    providers,
+    admin,
     answers,
     ingestion,
     recentEvents: () => [...events],
-    poolStatus: () => ({ llm: llm.status(), embedding: embeddings.status() }),
+    poolStatus: () => ({ llm: providers.llm.status(), embedding: providers.embeddings.status() }),
     healthy: () => ping(db),
     close: async () => {
       await db.end();

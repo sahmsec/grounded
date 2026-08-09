@@ -12,7 +12,7 @@ import type { ChunkRepository } from '../db/repositories.ts';
 import type { AnswerResult, RetrievedChunk } from '../domain/types.ts';
 import { ValidationError } from '../errors/index.ts';
 import type { Logger } from '../logging/logger.ts';
-import type { PooledEmbeddings, PooledLlm } from '../providers/index.ts';
+import type { ProviderAccess } from '../admin/runtime.ts';
 import { evaluateGate } from '../retrieval/gate.ts';
 import { buildCitations, buildUserPrompt, referencedMarkers, SYSTEM_PROMPT } from './prompt.ts';
 import { CANONICAL_REFUSAL, isInsufficientContext } from './protocol.ts';
@@ -22,8 +22,12 @@ const MAX_QUESTION_LENGTH = 2000;
 export interface AnswerServiceDeps {
   config: Config;
   chunks: ChunkRepository;
-  embeddings: PooledEmbeddings;
-  llm: PooledLlm;
+  /**
+   * Read through an accessor rather than captured directly, so an admin
+   * swapping provider or model takes effect on the next question instead of
+   * the next restart.
+   */
+  providers: ProviderAccess;
   logger: Logger;
   now?: () => number;
 }
@@ -55,7 +59,7 @@ function traceOf(candidates: RetrievedChunk[]): Array<Record<string, unknown>> {
 }
 
 export function createAnswerService(deps: AnswerServiceDeps): AnswerService {
-  const { config, chunks, embeddings, llm, logger } = deps;
+  const { config, chunks, providers, logger } = deps;
   const now = deps.now ?? Date.now;
 
   return {
@@ -72,7 +76,7 @@ export function createAnswerService(deps: AnswerServiceDeps): AnswerService {
         });
       }
 
-      const queryEmbedding = await embeddings.embedQuery(question);
+      const queryEmbedding = await providers.embeddings.embedQuery(question);
       const candidates = await chunks.search(queryEmbedding, config.gate.candidateLimit);
       const decision = evaluateGate(candidates, config.gate);
 
@@ -104,7 +108,7 @@ export function createAnswerService(deps: AnswerServiceDeps): AnswerService {
       }
 
       const userPrompt = buildUserPrompt(question, decision.chunks);
-      const completion = await llm.generate({
+      const completion = await providers.llm.generate({
         system: SYSTEM_PROMPT,
         user: userPrompt,
         maxTokens: config.llm.maxOutputTokens,

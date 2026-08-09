@@ -45,7 +45,7 @@ const outcomes: Outcome[] = [];
 
 /** Bag-of-words embeddings cannot represent meaning, so semantic-only cases
  *  are reported as skipped rather than counted as failures. */
-const lexicalOnly = app.embeddings.model === 'deterministic-v1';
+const lexicalOnly = app.providers.embeddings.model === 'deterministic-v1';
 
 /**
  * Spacing between scenarios, derived from the configured per-minute budget.
@@ -62,7 +62,7 @@ try {
   }
 
   process.stdout.write(
-    `Corpus: ${chunkCount} chunks. Embeddings: ${app.embeddings.model}. ` +
+    `Corpus: ${chunkCount} chunks. Embeddings: ${app.providers.embeddings.model}. ` +
       `Gate: ${app.config.gate.minTopSimilarity}\n` +
       `Running ${SCENARIOS.length} scenarios.\n\n`,
   );

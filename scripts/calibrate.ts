@@ -26,7 +26,7 @@ try {
 
   for (const scenario of SCENARIOS) {
     // Batch tooling waits out rate limits; the request path never does.
-    const embedding = await app.embeddings.embedQuery(scenario.question, { maxWaitMs: 5 * 60_000 });
+    const embedding = await app.providers.embeddings.embedQuery(scenario.question, { maxWaitMs: 5 * 60_000 });
     const results = await app.chunks.search(embedding, 3);
     rows.push({
       expect: scenario.expect,
@@ -41,13 +41,13 @@ try {
   // Semantic-only cases are excluded from the separability calculation when
   // the provider cannot represent meaning — including them would suggest no
   // threshold works, when in fact no *lexical* threshold works.
-  const lexical = app.embeddings.model === 'deterministic-v1';
+  const lexical = app.providers.embeddings.model === 'deterministic-v1';
   const considered = lexical ? rows.filter((row) => !row.semanticOnly) : rows;
 
   const answerScores = considered.filter((row) => row.expect === 'answer').map((row) => row.score);
   const refuseScores = considered.filter((row) => row.expect === 'refuse').map((row) => row.score);
 
-  process.stdout.write(`model: ${app.embeddings.model}\n\n`);
+  process.stdout.write(`model: ${app.providers.embeddings.model}\n\n`);
   process.stdout.write(`${'EXPECT'.padEnd(8)}${'CATEGORY'.padEnd(13)}${'SCORE'.padEnd(9)}${'TOP DOC'.padEnd(28)}QUESTION\n`);
   process.stdout.write(`${'-'.repeat(120)}\n`);
 

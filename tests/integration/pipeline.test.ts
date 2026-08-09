@@ -120,7 +120,7 @@ describe('ingestion', () => {
 
 describe('vector search', () => {
   it('returns results ordered by descending similarity', async () => {
-    const embedding = await app.embeddings.embedQuery('SQL injection database query');
+    const embedding = await app.providers.embeddings.embedQuery('SQL injection database query');
     const results = await app.chunks.search(embedding, 10);
 
     expect(results.length).toBeGreaterThan(0);
@@ -129,21 +129,21 @@ describe('vector search', () => {
   });
 
   it('ranks the relevant document above unrelated ones', async () => {
-    const embedding = await app.embeddings.embedQuery('SQL injection parameterised queries');
+    const embedding = await app.providers.embeddings.embedQuery('SQL injection parameterised queries');
     const results = await app.chunks.search(embedding, 5);
 
     expect(results[0]!.documentSlug).toBe('sql-injection');
   });
 
   it('respects the requested limit', async () => {
-    const embedding = await app.embeddings.embedQuery('firewall');
+    const embedding = await app.providers.embeddings.embedQuery('firewall');
     expect(await app.chunks.search(embedding, 3)).toHaveLength(3);
   });
 
   it('scores an in-domain question above an out-of-domain one', async () => {
-    const inDomain = await app.chunks.search(await app.embeddings.embedQuery('What is phishing?'), 1);
+    const inDomain = await app.chunks.search(await app.providers.embeddings.embedQuery('What is phishing?'), 1);
     const outOfDomain = await app.chunks.search(
-      await app.embeddings.embedQuery('What is a good recipe for pasta carbonara?'),
+      await app.providers.embeddings.embedQuery('What is a good recipe for pasta carbonara?'),
       1,
     );
 
